@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 
 import Login from './Pages/Login';
 import Register from './Pages/Register';
-import Dashboard from './Pages/Dashboard'; // Make sure to create this file
+import Home from './Pages/Dashboard'; // Make sure to create this file
 
 function App() {
 
@@ -15,7 +15,7 @@ function App() {
       <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Home />} />
       </Routes>
     </Router>
   );

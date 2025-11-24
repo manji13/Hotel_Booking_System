@@ -60,7 +60,7 @@ const Login = () => {
             duration: 3000,
             icon: '👋',
         });
-        setTimeout(() => navigate('/'), 1000);
+        setTimeout(() => navigate('/userpage'), 1000);
       } else {
         toast.error(data.message || 'Login failed');
         setIsSubmitting(false);
