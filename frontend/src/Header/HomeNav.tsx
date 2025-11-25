@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { CalendarDays, User, LogIn, LogOut, Shield, X } from 'lucide-react';
+import { CalendarDays, LogIn, Shield, X } from 'lucide-react';
 import { useState } from 'react';
 
 const Navbar = () => {
@@ -12,20 +12,10 @@ const Navbar = () => {
     return null;
   }
 
-  // Check if user is logged in
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    window.location.reload();
-  };
-
   // Logic to protect the Booking Route
   const handleBookingClick = (e: React.MouseEvent) => {
-    if (!user) {
-      e.preventDefault(); // Stop navigation
-      setShowAuthModal(true);
-    }
+    e.preventDefault(); // Stop navigation
+    setShowAuthModal(true);
   };
 
   const closeModal = () => {
@@ -87,52 +77,23 @@ const Navbar = () => {
               </Link>
             </div>
 
-            {/* RIGHT SIDE: Auth Buttons */}
+            {/* RIGHT SIDE: Auth Buttons - Always show Login/Register */}
             <div className="flex items-center space-x-4">
-              {user ? (
-                // Logged In View
-                <div className="flex items-center gap-4 pl-6 border-l border-gray-200/50">
-                  <div className="flex flex-col items-end mr-1">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Welcome</span>
-                    <span className="text-sm font-bold text-gray-800 leading-none">
-                      {user.name.split(' ')[0]}
-                    </span>
-                  </div>
-                  
-                  <div className="relative h-10 w-10 bg-gradient-to-tr from-blue-100 to-blue-50 rounded-full flex items-center justify-center text-blue-600 shadow-inner border border-white group">
-                    <User size={20} />
-                    {/* Online Indicator */}
-                    <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full border-2 border-white"></div>
-                  </div>
-
-                  <button 
-                    onClick={handleLogout}
-                    className="group p-2 rounded-full hover:bg-red-50 transition-all duration-300 text-gray-400 hover:text-red-500 hover:scale-110"
-                    title="Logout"
-                  >
-                    <LogOut size={20} />
-                  </button>
-                </div>
-              ) : (
-                // Logged Out View
-                <>
-                  <Link 
-                    to="/login" 
-                    className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium text-sm transition-all duration-300 px-4 py-2 rounded-lg hover:bg-blue-50/50 hover:scale-105"
-                  >
-                    <LogIn size={18} />
-                    <span>Login</span>
-                  </Link>
-                  <Link 
-                    to="/register" 
-                    className="group relative px-6 py-2.5 text-sm font-bold text-blue-600 border-2 border-blue-200 rounded-full hover:border-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md overflow-hidden"
-                  >
-                    {/* Button Background Effect */}
-                    <div className="absolute inset-0 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
-                    <span className="relative z-10">Register</span>
-                  </Link>
-                </>
-              )}
+              <Link 
+                to="/login" 
+                className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium text-sm transition-all duration-300 px-4 py-2 rounded-lg hover:bg-blue-50/50 hover:scale-105"
+              >
+                <LogIn size={18} />
+                <span>Login</span>
+              </Link>
+              <Link 
+                to="/register" 
+                className="group relative px-6 py-2.5 text-sm font-bold text-blue-600 border-2 border-blue-200 rounded-full hover:border-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-sm hover:shadow-md overflow-hidden"
+              >
+                {/* Button Background Effect */}
+                <div className="absolute inset-0 bg-blue-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></div>
+                <span className="relative z-10">Register</span>
+              </Link>
             </div>
           </div>
         </div>
