@@ -122,7 +122,7 @@ const Navbar: React.FC = () => {
 
             {/* Left Side */}
             <div className="flex-1 flex items-center justify-start gap-6">
-              <Link to="/" className="hidden md:block text-gray-600 hover:text-blue-600 font-medium transition-colors text-sm uppercase tracking-wider">
+              <Link to="/Userpage" className="hidden md:block text-gray-600 hover:text-blue-600 font-medium transition-colors text-sm uppercase tracking-wider">
                 Home
               </Link>
               <Link to="/about" className="hidden md:block text-gray-600 hover:text-blue-600 font-medium transition-colors text-sm uppercase tracking-wider">
@@ -150,7 +150,7 @@ const Navbar: React.FC = () => {
                 Contact Us
               </Link>
               
-              <Link to="/profile" className="p-2.5 text-gray-500 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 rounded-full transition-all group relative">
+              <Link to="/userprofile" className="p-2.5 text-gray-500 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 rounded-full transition-all group relative">
                 <User className="w-5 h-5" strokeWidth={2.5} />
                 <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs font-bold py-1 px-3 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                   Profile

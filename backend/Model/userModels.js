@@ -14,8 +14,14 @@ const userSchema = mongoose.Schema({
     type: String,
     required: [true, 'Please add a password'],
   },
+  // --- NEW FIELD: ROLE ---
+  role: {
+    type: String,
+    enum: ['user', 'employee'], // Define allowed roles
+    default: 'user',            // Default is always 'user'
+  },
 }, {
-  timestamps: true, // Automatically create createdAt and updatedAt fields
+  timestamps: true,
 });
 
 export default mongoose.model('User', userSchema);

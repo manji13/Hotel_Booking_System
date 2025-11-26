@@ -55,17 +55,31 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
+        // 1. Save user data (including role) to local storage
         localStorage.setItem('user', JSON.stringify(data));
+
         toast.success(`Welcome back, ${data.name}!`, {
             duration: 3000,
             icon: '👋',
         });
-        setTimeout(() => navigate('/userpage'), 1000);
+
+        // 2. CHECK ROLE AND REDIRECT ACCORDINGLY
+        setTimeout(() => {
+          if (data.role === 'employee') {
+            console.log('Redirecting to Employee Dashboard...');
+            navigate('/employee-home'); // Navigate to Employee Page
+          } else {
+            console.log('Redirecting to User Homepage...');
+            navigate('/userpage');      // Navigate to Standard User Page
+          }
+        }, 1000);
+
       } else {
         toast.error(data.message || 'Login failed');
         setIsSubmitting(false);
       }
     } catch (error) {
+      console.error(error);
       toast.error('Server error. Is the backend running?');
       setIsSubmitting(false);
     }
