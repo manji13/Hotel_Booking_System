@@ -3,18 +3,18 @@ import { Toaster } from 'react-hot-toast';
 
 import Login from './Pages/Login';
 import Register from './Pages/Register';
-import Home from './Pages/Dashboard'; // Make sure to create this file
+import Home from './Pages/Dashboard';
 import Userpage from './Pages/Userpage';
 import UserProfile from './Pages/Userprofile';
 
 import Booking from './Pages/Booking';
+import UserBookingForm from './Pages/UserBookingForm';
 
 import UserDetails from './Pages/Employee/UserDetails';
 import AddBooking from './Pages/Employee/AddBooking';
 import DetailsBooking from './Pages/Employee/DetailsBooking';
+
 function App() {
-
-
   return (
     <Router>
       <Toaster position="top-center" reverseOrder={false} />
@@ -27,6 +27,8 @@ function App() {
           <Route path="/userprofile" element={<UserProfile/>} />
 
           <Route path="/booking" element={<Booking/>} />
+         
+          <Route path="/booking/:roomId" element={<UserBookingForm/>} />
 
           <Route path="/userdetails" element={<UserDetails/>} />
           <Route path="/addbooking" element={<AddBooking/>} />
