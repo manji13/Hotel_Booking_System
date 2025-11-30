@@ -3,6 +3,7 @@ import { Edit, Trash2, X, Check, Image as ImageIcon, BedDouble, Users, DollarSig
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import EmployeeNavBar from '../../Header/EmployeeNav';
 
 type RoomType = {
   _id: string;
@@ -147,6 +148,8 @@ const DetailsBooking = () => {
   );
 
   return (
+    <div>
+      <EmployeeNavBar />
     <div className="min-h-screen bg-gray-50 p-6 sm:p-10 font-sans text-gray-900">
       <div className="max-w-7xl mx-auto">
         
@@ -452,6 +455,7 @@ const DetailsBooking = () => {
         </AnimatePresence>
 
       </div>
+    </div>
     </div>
   );
 };

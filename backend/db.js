@@ -1,14 +1,20 @@
 import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const connectDB = async () => {
   try {
-    // Replace this string with your actual MongoDB URL if not using .env yet
     const conn = await mongoose.connect(process.env.MONGO_URI);
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`------------------------------------------------`);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    console.log(`📂 Active Database Name: "${conn.connection.name}"`); 
+    console.log(`------------------------------------------------`);
+    
   } catch (error) {
-    console.error(`Error: ${error.message}`);
-    process.exit(1); // Exit process with failure
+    console.error(`❌ Connection Error: ${error.message}`);
+    process.exit(1);
   }
 };
 

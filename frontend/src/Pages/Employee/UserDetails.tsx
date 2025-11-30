@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trash2, Edit2, X, Check, Users, ShieldAlert, Briefcase, User as UserIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import EmployeeNavBar from '../../Header/EmployeeNav';
 
 // Define User Interface
 interface UserData {
@@ -103,6 +104,8 @@ const UserDetails = () => {
   }
 
   return (
+    <div>
+      <EmployeeNavBar />
     <div className="min-h-screen bg-gray-50 p-6 sm:p-12 font-sans">
       <div className="max-w-6xl mx-auto">
         
@@ -277,6 +280,7 @@ const UserDetails = () => {
         )}
       </AnimatePresence>
     </div>
+  </div>
   );
 };
 

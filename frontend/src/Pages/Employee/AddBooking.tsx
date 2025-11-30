@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { PlusCircle, Image as ImageIcon, BedDouble, Users, DollarSign, Type, FileText, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import EmployeeNavBar from '../../Header/EmployeeNav';
 
 const AddBooking = () => {
   const navigate = useNavigate();
@@ -114,7 +115,10 @@ const AddBooking = () => {
   );
 
   return (
+    <div>
+       <EmployeeNavBar />
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+     
       <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden min-h-[600px]">
         
         <AnimatePresence mode="wait">
@@ -265,6 +269,7 @@ const AddBooking = () => {
         </AnimatePresence>
       </div>
     </div>
+     </div>
   );
 };
 
