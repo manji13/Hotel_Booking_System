@@ -29,8 +29,6 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          
-          {/* --- User Dashboard & Profile --- */}
           <Route path="/userpage" element={<Userpage/>} />
           <Route path="/userprofile" element={<UserProfile/>} />
 

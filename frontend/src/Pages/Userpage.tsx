@@ -8,14 +8,18 @@ const Userpage = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const navigate = useNavigate();
 
+  // 1. Create Refs for scroll detection
   const welcomeRef = useRef(null);
   const featuresRef = useRef(null);
   const exploreRef = useRef(null);
+  const locationRef = useRef(null); // Added Location Ref
   const ctaRef = useRef(null);
   
+  // 2. Setup InView hooks
   const welcomeInView = useInView(welcomeRef, { once: true, margin: "-100px" });
   const featuresInView = useInView(featuresRef, { once: true, margin: "-100px" });
   const exploreInView = useInView(exploreRef, { once: true, margin: "-100px" });
+  const locationInView = useInView(locationRef, { once: true, margin: "-100px" }); // Added Location InView
   const ctaInView = useInView(ctaRef, { once: true, margin: "-100px" });
 
   const { scrollY } = useScroll();
@@ -325,6 +329,80 @@ const Userpage = () => {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* New Location Section with Map */}
+      <section ref={locationRef} className="py-24 bg-gray-50 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4">
+          <motion.div 
+            className="grid lg:grid-cols-2 gap-16 items-center"
+            initial={{ opacity: 0, y: 30 }}
+            animate={locationInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            transition={{ duration: 0.8 }}
+          >
+            {/* Text Content */}
+            <div>
+              <div className="inline-flex items-center gap-2 text-yellow-400 mb-4">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <span className="text-sm font-semibold tracking-widest uppercase">Location</span>
+              </div>
+              
+              <h2 className="text-5xl font-bold text-gray-800 mb-8 font-serif leading-tight">
+                Find Your Way to Serenity
+              </h2>
+              
+              <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+                Located just minutes from the sacred Kataragama Temple, our guest house provides a peaceful base for your pilgrimage. We are easily accessible via the Sella Kataragama Road.
+              </p>
+
+              <div className="space-y-6">
+                <div className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-yellow-100 p-3 rounded-full text-yellow-600">
+                    <MapPin size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-800 mb-1">Our Address</h4>
+                    <p className="text-gray-600">
+                      2 Kataragama-Sella Kataragama Road,<br />
+                      Kataragama 91400, Sri Lanka
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                  <div className="bg-yellow-100 p-3 rounded-full text-yellow-600">
+                    <Car size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-800 mb-1">Arrival</h4>
+                    <p className="text-gray-600">
+                      Free private parking is available on site.<br />
+                      300m from Kataragama New Town.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Map Frame */}
+            <motion.div 
+              className="h-[500px] w-full bg-white rounded-3xl shadow-2xl overflow-hidden border-4 border-white"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.5 }}
+            >
+              <iframe 
+                title="Manjitha Guest House Location"
+                width="100%" 
+                height="100%" 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4022.8069036274014!2d81.32385181654963!3d6.416776808044096!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae427ae14712abd%3A0x4dc5fd3890d0bb9c!2sMANJITHA%20Guest!5e1!3m2!1sen!2slk!4v1764560129890!5m2!1sen!2slk"
+                style={{ border: 0, filter: "grayscale(0.1)" }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              ></iframe>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
