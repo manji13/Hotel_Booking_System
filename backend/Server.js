@@ -7,7 +7,7 @@ import connectDB from './db.js';
 
 import userRoutes from './Routes/userRoutes.js';
 import roomRoutes from './Routes/roomRoutes.js';
-import paymentRoutes from './Routes/paymentRoute.js';
+import paymentRoutes from './Routes/bookingRoute.js';
 
 // dotenv.config(); <--- Remove this line, it's done at the top now
 

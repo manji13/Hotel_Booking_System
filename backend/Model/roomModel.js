@@ -27,6 +27,14 @@ const roomSchema = mongoose.Schema({
     required: true,
     default: 0,
   },
+  // --- NEW FIELD ---
+  availableCount: {
+    type: Number,
+    required: true,
+    default: 1, // Default to 1 room available if not specified
+    min: 0
+  },
+  // ----------------
   description: {
     type: String,
     default: '',

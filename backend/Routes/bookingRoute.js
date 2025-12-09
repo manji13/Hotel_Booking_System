@@ -3,18 +3,22 @@ import {
   createPaymentIntent,
   confirmBooking,
   getBooking,
-  getAllBookings, // <--- Import this
+  getAllBookings,
   deleteBooking,
   handleWebhook
-} from '../Controller/paymentController.js';
+} from '../Controller/bookingController.js';
 
 const router = express.Router();
 
+// Webhook route (must be before body parser if you handle that in server.js, usually handled separately)
 router.post('/webhook', express.raw({type: 'application/json'}), handleWebhook);
+
+// Payment & Booking Routes
 router.post('/create-payment-intent', createPaymentIntent);
 router.post('/confirm-booking', confirmBooking);
 
-router.get('/all-bookings', getAllBookings); // <--- Add this new route
+// Data Retrieval Routes
+router.get('/all-bookings', getAllBookings); // <--- Matches the exported function
 router.get('/booking/:id', getBooking);
 router.delete('/booking/:id', deleteBooking);
 

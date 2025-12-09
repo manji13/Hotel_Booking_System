@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BedDouble, Users, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BedDouble, Users, DollarSign, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from "../Header/UserNav.jsx";
@@ -12,6 +12,7 @@ interface Room {
   capacity: number;
   price: number;
   description: string;
+  availableCount: number; // --- Added field ---
 }
 
 // Helper to construct image URL
@@ -30,6 +31,7 @@ const RoomCard = ({ room, index }: { room: Room; index: number }) => {
   const [direction, setDirection] = useState(0);
 
   const hasMultipleImages = room.images && room.images.length > 1;
+  const isSoldOut = room.availableCount < 1; // Check availability
 
   // --- Navigation Logic ---
   const paginate = useCallback((newDirection: number) => {
@@ -69,6 +71,12 @@ const RoomCard = ({ room, index }: { room: Room; index: number }) => {
     }),
   };
 
+  const handleBookClick = () => {
+    if (!isSoldOut) {
+        navigate(`/booking/${room._id}`, { state: { room } });
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -79,8 +87,8 @@ const RoomCard = ({ room, index }: { room: Room; index: number }) => {
       
       {/* Left Side: Image Carousel (Compact Height) */}
       <div 
-        className="w-full md:w-5/12 h-[220px] md:h-[260px] overflow-hidden relative cursor-pointer rounded-lg bg-gray-100"
-        onClick={() => navigate(`/booking/${room._id}`, { state: { room } })}
+        className={`w-full md:w-5/12 h-[220px] md:h-[260px] overflow-hidden relative rounded-lg bg-gray-100 ${!isSoldOut ? 'cursor-pointer' : 'cursor-not-allowed grayscale'}`}
+        onClick={handleBookClick}
       >
         <AnimatePresence initial={false} custom={direction}>
           {room.images && room.images.length > 0 ? (
@@ -105,8 +113,15 @@ const RoomCard = ({ room, index }: { room: Room; index: number }) => {
           )}
         </AnimatePresence>
 
+        {/* Sold Out Overlay on Image */}
+        {isSoldOut && (
+            <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center">
+                <span className="bg-red-600 text-white px-4 py-2 font-bold uppercase tracking-widest text-sm rounded shadow-lg">Sold Out</span>
+            </div>
+        )}
+
         {/* Navigation Arrows */}
-        {hasMultipleImages && (
+        {hasMultipleImages && !isSoldOut && (
           <>
             <button 
               className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-1 rounded-full shadow-sm opacity-0 group-hover:opacity-100 hover:opacity-100 transition-all z-10 text-gray-800"
@@ -138,9 +153,24 @@ const RoomCard = ({ room, index }: { room: Room; index: number }) => {
       <div className="w-full md:w-7/12 flex flex-col justify-center text-left space-y-3 px-2">
         
         <div className="flex justify-between items-start">
-          <h2 className="text-xl font-medium tracking-wide text-gray-800">
-            {room.roomType}
-          </h2>
+          <div>
+            <h2 className="text-xl font-medium tracking-wide text-gray-800">
+                {room.roomType}
+            </h2>
+            {/* Availability Badge */}
+            <div className="mt-1">
+                {isSoldOut ? (
+                    <span className="text-red-500 text-xs font-bold flex items-center gap-1">
+                        <AlertCircle size={12} /> Unavailable
+                    </span>
+                ) : (
+                    <span className="text-green-600 text-xs font-bold bg-green-50 px-2 py-0.5 rounded-full">
+                        {room.availableCount} Available
+                    </span>
+                )}
+            </div>
+          </div>
+          
           <span className="text-sm font-semibold text-[#1a2b49] bg-blue-50 px-3 py-1 rounded-full">
             ${room.price} <span className="text-xs font-normal text-gray-500">/ night</span>
           </span>
@@ -170,10 +200,15 @@ const RoomCard = ({ room, index }: { room: Room; index: number }) => {
         {/* Button */}
         <div className="pt-1">
           <button 
-            onClick={() => navigate(`/booking/${room._id}`, { state: { room } })}
-            className="w-full md:w-auto bg-[#1a2b49] text-white px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase hover:bg-[#2c4a7c] transition-colors rounded shadow-sm"
+            onClick={handleBookClick}
+            disabled={isSoldOut}
+            className={`w-full md:w-auto px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors rounded shadow-sm
+                ${isSoldOut 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-[#1a2b49] text-white hover:bg-[#2c4a7c]'
+                }`}
           >
-            View Details
+            {isSoldOut ? 'Sold Out' : 'View Details'}
           </button>
         </div>
 

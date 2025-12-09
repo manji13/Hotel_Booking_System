@@ -11,14 +11,24 @@ const buildPathsFromFiles = (files) => {
 // Create room
 export const createRoom = async (req, res) => {
   try {
-    const { roomType, beds, capacity, price, description } = req.body;
+    // Added availableCount to destructuring
+    const { roomType, beds, capacity, price, description, availableCount } = req.body;
     const images = buildPathsFromFiles(req.files);
 
     if (!roomType || !beds || !capacity || !price || images.length === 0) {
       return res.status(400).json({ message: 'All fields are required with at least 1 image' });
     }
 
-    const room = await Room.create({ roomType, beds, capacity, price, description, images });
+    // Include availableCount in creation
+    const room = await Room.create({ 
+        roomType, 
+        beds, 
+        capacity, 
+        price, 
+        description, 
+        images,
+        availableCount: availableCount || 1 
+    });
     res.status(201).json(room);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -41,12 +51,18 @@ export const updateRoom = async (req, res) => {
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ message: 'Room not found' });
 
-    const { roomType, beds, capacity, price, description } = req.body;
+    // Added availableCount
+    const { roomType, beds, capacity, price, description, availableCount } = req.body;
+    
     room.roomType = roomType ?? room.roomType;
     room.beds = beds ?? room.beds;
     room.capacity = capacity ?? room.capacity;
     room.price = price ?? room.price;
     room.description = description ?? room.description;
+    // Update count if provided
+    if (availableCount !== undefined) {
+        room.availableCount = availableCount;
+    }
 
     if (req.files && req.files.length > 0) {
       // Delete old images
