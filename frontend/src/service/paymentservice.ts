@@ -17,8 +17,8 @@ export const confirmBooking = async (bookingData: any) => {
     body: JSON.stringify(bookingData),
   });
   if (!response.ok) {
-     const err = await response.json();
-     throw new Error(err.error || 'Failed to confirm booking');
+      const err = await response.json();
+      throw new Error(err.error || 'Failed to confirm booking');
   }
   return response.json();
 };
@@ -29,13 +29,11 @@ export const getBooking = async (bookingId: string) => {
   return response.json();
 };
 
-// --- ADD THIS NEW FUNCTION ---
 export const getAllBookings = async () => {
   const response = await fetch(`${API_BASE_URL}/payments/all-bookings`);
   if (!response.ok) throw new Error('Failed to fetch bookings list');
   return response.json();
 };
-// ----------------------------
 
 export const deleteBooking = async (bookingId: string) => {
   const response = await fetch(`${API_BASE_URL}/payments/booking/${bookingId}`, {

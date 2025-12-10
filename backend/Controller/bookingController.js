@@ -5,10 +5,10 @@ import mongoose from 'mongoose';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// --- 1. Create Payment Intent ---
+// --- 1. Create Payment Intent (Check Stock) ---
 export const createPaymentIntent = async (req, res) => {
   try {
-    const { amount, roomId, checkIn, checkOut, guests, customerInfo } = req.body;
+    const { amount, roomId, customerInfo } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(roomId)) return res.status(400).json({ error: 'Invalid Room ID' });
     
@@ -16,7 +16,7 @@ export const createPaymentIntent = async (req, res) => {
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
-    // SAFETY CHECK: Double check availability before taking payment
+    // CRITICAL: Prevent booking if stock is 0
     if (room.availableCount < 1) {
         return res.status(400).json({ error: 'Room is sold out' });
     }
@@ -34,18 +34,16 @@ export const createPaymentIntent = async (req, res) => {
   }
 };
 
-// --- 2. Confirm Booking (AND DECREASE COUNT) ---
+// --- 2. Confirm Booking (DECREASE Stock -1) ---
 export const confirmBooking = async (req, res) => {
   try {
     const { paymentIntentId, roomId, checkIn, checkOut, guests, customerInfo, totalAmount } = req.body;
 
-    // Verify Payment with Stripe
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (paymentIntent.status !== 'succeeded') {
         return res.status(400).json({ error: 'Payment not completed' });
     }
 
-    // Create the Booking Record
     const booking = new Booking({
       roomId, 
       customerInfo,
@@ -65,13 +63,10 @@ export const confirmBooking = async (req, res) => {
 
     const savedBooking = await booking.save();
 
-    // ---------------------------------------------------------
-    // CRITICAL: DECREASE ROOM COUNT BY 1
-    // ---------------------------------------------------------
+    // CRITICAL: Reduce available rooms by 1
     await Room.findByIdAndUpdate(roomId, { 
         $inc: { availableCount: -1 } 
     });
-    // ---------------------------------------------------------
 
     res.json({ success: true, bookingId: savedBooking._id, message: 'Confirmed' });
   } catch (error) {
@@ -86,10 +81,8 @@ export const getAllBookings = async (req, res) => {
     const bookings = await Booking.find()
       .populate('roomId')
       .sort({ createdAt: -1 });
-      
     res.json(bookings);
   } catch (error) {
-    console.error("Error fetching all bookings:", error);
     res.status(500).json({ error: 'Failed to fetch bookings' });
   }
 };
@@ -109,18 +102,35 @@ export const getBooking = async (req, res) => {
   }
 };
 
-// --- 5. Delete Booking ---
+// --- 5. Delete Booking (RESTOCK LOGIC +1) ---
 export const deleteBooking = async (req, res) => {
   try {
-    const booking = await Booking.findByIdAndDelete(req.params.id);
-    if (!booking) return res.status(404).json({ error: 'Not found' });
-    res.json({ message: 'Deleted' });
+    // A. Find the booking first to get the Room ID
+    const booking = await Booking.findById(req.params.id);
+    
+    if (!booking) {
+        return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    // B. INCREASE Room Count (+1)
+    // This logic ensures that when a booking is removed, the room becomes available again
+    if (booking.roomId) {
+        await Room.findByIdAndUpdate(booking.roomId, { 
+            $inc: { availableCount: 1 } 
+        });
+    }
+
+    // C. Now permanently delete the booking record
+    await Booking.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'Booking deleted and Room stock restored' });
   } catch (error) {
+    console.error("Delete Error:", error);
     res.status(500).json({ error: 'Server Error' });
   }
 };
 
-// --- 6. Webhook Handler ---
+// --- 6. Webhook ---
 export const handleWebhook = async (req, res) => {
   try {
     const event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);

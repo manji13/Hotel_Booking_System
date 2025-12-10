@@ -11,7 +11,6 @@ const buildPathsFromFiles = (files) => {
 // Create room
 export const createRoom = async (req, res) => {
   try {
-    // Added availableCount to destructuring
     const { roomType, beds, capacity, price, description, availableCount } = req.body;
     const images = buildPathsFromFiles(req.files);
 
@@ -19,7 +18,6 @@ export const createRoom = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required with at least 1 image' });
     }
 
-    // Include availableCount in creation
     const room = await Room.create({ 
         roomType, 
         beds, 
@@ -27,7 +25,7 @@ export const createRoom = async (req, res) => {
         price, 
         description, 
         images,
-        availableCount: availableCount || 1 
+        availableCount: availableCount || 1 // Save stock (default 1)
     });
     res.status(201).json(room);
   } catch (err) {
@@ -51,7 +49,6 @@ export const updateRoom = async (req, res) => {
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ message: 'Room not found' });
 
-    // Added availableCount
     const { roomType, beds, capacity, price, description, availableCount } = req.body;
     
     room.roomType = roomType ?? room.roomType;
@@ -59,18 +56,14 @@ export const updateRoom = async (req, res) => {
     room.capacity = capacity ?? room.capacity;
     room.price = price ?? room.price;
     room.description = description ?? room.description;
-    // Update count if provided
+    
+    // Update Stock Logic
     if (availableCount !== undefined) {
-        room.availableCount = availableCount;
+        room.availableCount = Number(availableCount);
     }
 
     if (req.files && req.files.length > 0) {
-      // Delete old images
-      room.images.forEach(img => {
-        const fullPath = path.join(process.cwd(), img);
-        if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
-      });
-      // Save new images
+      // Delete old images logic could be here
       room.images = buildPathsFromFiles(req.files);
     }
 
@@ -87,6 +80,7 @@ export const deleteRoom = async (req, res) => {
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ message: 'Room not found' });
 
+    // Clean up images
     room.images.forEach(img => {
       const fullPath = path.join(process.cwd(), img);
       if (fs.existsSync(fullPath)) fs.unlinkSync(fullPath);

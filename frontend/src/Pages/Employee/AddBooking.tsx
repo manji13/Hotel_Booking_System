@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PlusCircle, Image as ImageIcon, BedDouble, Users, DollarSign, Type, FileText, Check } from 'lucide-react';
+import { PlusCircle, Image as ImageIcon, BedDouble, Users, DollarSign, Type, FileText, Check, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmployeeNavBar from '../../Header/EmployeeNav';
@@ -15,8 +15,8 @@ const AddBooking = () => {
   const [beds, setBeds] = useState<number | ''>('');
   const [capacity, setCapacity] = useState<number | ''>('');
   const [price, setPrice] = useState<number | ''>('');
+  const [availableCount, setAvailableCount] = useState<number | ''>(''); // --- NEW STATE ---
   const [description, setDescription] = useState('');
-  // File State
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   useEffect(() => {
@@ -53,6 +53,8 @@ const AddBooking = () => {
     formData.append('capacity', String(capacity));
     formData.append('price', String(price));
     formData.append('description', description);
+    // --- Send Available Count (Default to 1 if empty) ---
+    formData.append('availableCount', String(availableCount || 1)); 
 
     for (let i = 0; i < selectedFiles.length; i++) {
       formData.append('images', selectedFiles[i]);
@@ -65,12 +67,9 @@ const AddBooking = () => {
       });
 
       if (response.ok) {
-        // Show Success Animation instead of immediate redirect
         setShowSuccess(true);
-        
-        // Redirect after 2 seconds
         setTimeout(() => {
-          navigate('/booking');
+          navigate('/booking'); // Navigate to booking list
         }, 2000);
       } else {
         const errorData = await response.json();
@@ -84,7 +83,6 @@ const AddBooking = () => {
     }
   };
 
-  // Animation Component
   const SuccessView = () => (
     <div className="flex flex-col items-center justify-center h-full py-20">
       <motion.div
@@ -118,27 +116,14 @@ const AddBooking = () => {
     <div>
        <EmployeeNavBar />
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-     
       <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden min-h-[600px]">
-        
         <AnimatePresence mode="wait">
           {showSuccess ? (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="h-full flex flex-col justify-center"
-            >
+            <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full flex flex-col justify-center">
               <SuccessView />
             </motion.div>
           ) : (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
+            <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="bg-blue-600 px-6 py-4">
                 <h2 className="text-2xl font-bold text-white flex items-center gap-2">
                   <PlusCircle /> Add New Room
@@ -152,12 +137,7 @@ const AddBooking = () => {
                   <label className="block text-sm font-bold text-blue-900 mb-1">Room Type</label>
                   <div className="relative">
                     <Type className="absolute left-3 top-3 text-blue-400" size={18} />
-                    <select 
-                      value={roomType} 
-                      onChange={(e) => setRoomType(e.target.value)}
-                      required
-                      className="w-full pl-10 pr-4 py-2 rounded border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white"
-                    >
+                    <select value={roomType} onChange={(e) => setRoomType(e.target.value)} required className="w-full pl-10 pr-4 py-2 rounded border border-blue-200 focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                       <option value="">Select Type...</option>
                       <option value="Double Room (A/c)">Double Room (A/c)</option>
                       <option value="Triple room (non-A/c)">Triple room (non-A/c)</option>
@@ -168,99 +148,67 @@ const AddBooking = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
-                  {/* Beds */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Number of Beds</label>
                     <div className="relative">
                       <BedDouble className="absolute left-3 top-3 text-gray-400" size={18} />
-                      <input
-                        type="number"
-                        required
-                        value={beds}
-                        onChange={(e) => setBeds(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:border-blue-500 outline-none"
-                        placeholder="2"
-                      />
+                      <input type="number" required value={beds} onChange={(e) => setBeds(e.target.value === '' ? '' : Number(e.target.value))} className="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:border-blue-500 outline-none" placeholder="2" />
                     </div>
                   </div>
-
-                  {/* Capacity */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Guest Capacity</label>
                     <div className="relative">
                       <Users className="absolute left-3 top-3 text-gray-400" size={18} />
-                      <input
-                        type="number"
-                        required
-                        value={capacity}
-                        onChange={(e) => setCapacity(e.target.value === '' ? '' : Number(e.target.value))}
-                        className="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:border-blue-500 outline-none"
-                        placeholder="4"
-                      />
+                      <input type="number" required value={capacity} onChange={(e) => setCapacity(e.target.value === '' ? '' : Number(e.target.value))} className="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:border-blue-500 outline-none" placeholder="4" />
                     </div>
                   </div>
                 </div>
 
-                {/* Price */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price Per Night ($)</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-3 text-gray-400" size={18} />
-                    <input
-                      type="number"
-                      required
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:border-blue-500 outline-none"
-                      placeholder="150"
-                    />
-                  </div>
+                <div className="grid grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                        <div className="relative">
+                        <DollarSign className="absolute left-3 top-3 text-gray-400" size={18} />
+                        <input type="number" required value={price} onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))} className="w-full pl-10 pr-4 py-2 rounded border border-gray-300 focus:border-blue-500 outline-none" placeholder="150" />
+                        </div>
+                    </div>
+                    {/* --- NEW AVAILABLE COUNT INPUT --- */}
+                    <div>
+                        <label className="block text-sm font-bold text-blue-600 mb-1">Stock Quantity</label>
+                        <div className="relative">
+                        <Layers className="absolute left-3 top-3 text-blue-400" size={18} />
+                        <input 
+                            type="number" 
+                            required 
+                            min="1" 
+                            value={availableCount} 
+                            onChange={(e) => setAvailableCount(e.target.value === '' ? '' : Number(e.target.value))} 
+                            className="w-full pl-10 pr-4 py-2 rounded border border-blue-200 bg-blue-50 focus:border-blue-500 outline-none" 
+                            placeholder="e.g. 2" 
+                        />
+                        </div>
+                    </div>
                 </div>
 
-                {/* Description */}
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                     <div className="relative">
                       <FileText className="absolute left-3 top-3 text-gray-400" size={18} />
-                      <textarea 
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
-                          className="w-full pl-10 p-3 rounded border border-gray-300 focus:border-blue-500 outline-none"
-                          rows={3}
-                          placeholder="Room details..."
-                      />
+                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full pl-10 p-3 rounded border border-gray-300 focus:border-blue-500 outline-none" rows={3} placeholder="Room details..." />
                     </div>
                 </div>
 
-                {/* File Upload */}
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors">
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex flex-col items-center cursor-pointer">
                     <ImageIcon size={32} className="text-gray-400 mb-2" />
                     <span className="text-blue-600 font-semibold">Upload Room Images</span>
                     <span className="text-xs text-gray-500 mt-1">Select 1 to 4 images (JPG, PNG)</span>
-                    
-                    <input 
-                      type="file" 
-                      multiple 
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
+                    <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
                   </label>
-                  
-                  {/* Show selected file count */}
-                  {selectedFiles && (
-                    <div className="mt-2 text-sm text-green-600 font-medium">
-                      {selectedFiles.length} file(s) selected
-                    </div>
-                  )}
+                  {selectedFiles && <div className="mt-2 text-sm text-green-600 font-medium">{selectedFiles.length} file(s) selected</div>}
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-lg"
-                >
+                <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 shadow-lg">
                   {loading ? 'Uploading & Adding...' : 'Publish Room'}
                 </button>
               </form>
@@ -269,7 +217,7 @@ const AddBooking = () => {
         </AnimatePresence>
       </div>
     </div>
-     </div>
+    </div>
   );
 };
 
