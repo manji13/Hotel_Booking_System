@@ -35,6 +35,13 @@ export const getAllBookings = async () => {
   return response.json();
 };
 
+// --- NEW FUNCTION: Get Bookings for Specific User ---
+export const getUserBookings = async (userId: string) => {
+  const response = await fetch(`${API_BASE_URL}/payments/user/${userId}`);
+  if (!response.ok) throw new Error('Failed to fetch user bookings');
+  return response.json();
+};
+
 export const deleteBooking = async (bookingId: string) => {
   const response = await fetch(`${API_BASE_URL}/payments/booking/${bookingId}`, {
     method: 'DELETE',

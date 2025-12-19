@@ -38,7 +38,7 @@ const UserProfileNavbar = () => {
             
             {/* Booking History Button */}
             <Link
-              to="/booking-history"
+              to="/my-history"
               className="flex items-center gap-2 text-gray-700 hover:text-blue-600 font-medium px-4 py-2 rounded-lg hover:bg-blue-50 transition-all duration-300 group"
             >
               <Calendar size={18} />
@@ -68,7 +68,7 @@ const UserProfileNavbar = () => {
                   </Link>
                   
                   <Link
-                    to="/booking-history"
+                    to="/my-history"
                     className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-200"
                     onClick={() => setShowDropdown(false)}
                   >

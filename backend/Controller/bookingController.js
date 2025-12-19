@@ -5,18 +5,16 @@ import mongoose from 'mongoose';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// --- 1. Create Payment Intent (Check Stock) ---
+// --- 1. Create Payment Intent ---
 export const createPaymentIntent = async (req, res) => {
   try {
     const { amount, roomId, customerInfo } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(roomId)) return res.status(400).json({ error: 'Invalid Room ID' });
     
-    // Check if room exists
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
-    // CRITICAL: Prevent booking if stock is 0
     if (room.availableCount < 1) {
         return res.status(400).json({ error: 'Room is sold out' });
     }
@@ -34,10 +32,11 @@ export const createPaymentIntent = async (req, res) => {
   }
 };
 
-// --- 2. Confirm Booking (DECREASE Stock -1) ---
+// --- 2. Confirm Booking (UPDATED WITH USER ID) ---
 export const confirmBooking = async (req, res) => {
   try {
-    const { paymentIntentId, roomId, checkIn, checkOut, guests, customerInfo, totalAmount } = req.body;
+    // Note: userId is now destructured from the request body
+    const { paymentIntentId, roomId, checkIn, checkOut, guests, customerInfo, totalAmount, userId } = req.body;
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     if (paymentIntent.status !== 'succeeded') {
@@ -45,6 +44,7 @@ export const confirmBooking = async (req, res) => {
     }
 
     const booking = new Booking({
+      userId, // <--- SAVING THE USER ID
       roomId, 
       customerInfo,
       stayDetails: { 
@@ -63,7 +63,6 @@ export const confirmBooking = async (req, res) => {
 
     const savedBooking = await booking.save();
 
-    // CRITICAL: Reduce available rooms by 1
     await Room.findByIdAndUpdate(roomId, { 
         $inc: { availableCount: -1 } 
     });
@@ -75,7 +74,7 @@ export const confirmBooking = async (req, res) => {
   }
 };
 
-// --- 3. Get All Bookings ---
+// --- 3. Get All Bookings (For Employees/Admin) ---
 export const getAllBookings = async (req, res) => {
   try {
     const bookings = await Booking.find()
@@ -87,7 +86,20 @@ export const getAllBookings = async (req, res) => {
   }
 };
 
-// --- 4. Get Single Booking ---
+// --- 4. NEW: Get Only Specific User Bookings ---
+export const getUserBookings = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const bookings = await Booking.find({ userId: userId })
+      .populate('roomId')
+      .sort({ createdAt: -1 });
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user bookings' });
+  }
+};
+
+// --- 5. Get Single Booking ---
 export const getBooking = async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return res.status(400).json({ error: 'Invalid ID' });
@@ -102,25 +114,21 @@ export const getBooking = async (req, res) => {
   }
 };
 
-// --- 5. Delete Booking (RESTOCK LOGIC +1) ---
+// --- 6. Delete Booking (Restock Logic) ---
 export const deleteBooking = async (req, res) => {
   try {
-    // A. Find the booking first to get the Room ID
     const booking = await Booking.findById(req.params.id);
     
     if (!booking) {
         return res.status(404).json({ error: 'Booking not found' });
     }
 
-    // B. INCREASE Room Count (+1)
-    // This logic ensures that when a booking is removed, the room becomes available again
     if (booking.roomId) {
         await Room.findByIdAndUpdate(booking.roomId, { 
             $inc: { availableCount: 1 } 
         });
     }
 
-    // C. Now permanently delete the booking record
     await Booking.findByIdAndDelete(req.params.id);
 
     res.json({ message: 'Booking deleted and Room stock restored' });
@@ -130,7 +138,7 @@ export const deleteBooking = async (req, res) => {
   }
 };
 
-// --- 6. Webhook ---
+// --- 7. Webhook ---
 export const handleWebhook = async (req, res) => {
   try {
     const event = stripe.webhooks.constructEvent(req.body, req.headers['stripe-signature'], process.env.STRIPE_WEBHOOK_SECRET);

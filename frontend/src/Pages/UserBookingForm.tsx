@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   CheckCircle, ArrowLeft, AlertOctagon, Calculator 
@@ -18,6 +18,7 @@ interface Room {
   availableCount: number;
 }
 
+// --- Stripe Payment Form Sub-Component ---
 const StripePaymentForm = ({ clientSecret, onPaymentSuccess, onPaymentError }: any) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -62,6 +63,7 @@ const StripePaymentForm = ({ clientSecret, onPaymentSuccess, onPaymentError }: a
   );
 };
 
+// --- Main Page Component ---
 const UserBookingForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -78,21 +80,16 @@ const UserBookingForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   
-  // --- NEW: Calculate Total Price for UI Display ---
+  // Calculations
   const [calculatedTotal, setCalculatedTotal] = useState(0);
   const [totalNights, setTotalNights] = useState(0);
 
-  // --- NEW: Image URL Helper ---
+  // Helper: Image URL
   const getImageUrl = (path: string) => {
     if (!path) return '';
-    // If it's already a full URL, return it
     if (path.startsWith('http')) return path;
-    
-    // Clean up slashes (replace backslash with forward slash)
     const cleanPath = path.replace(/\\/g, '/');
     const finalPath = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
-    
-    // IMPORTANT: Make sure this port matches your backend server!
     return `http://localhost:5000${finalPath}`;
   };
 
@@ -138,14 +135,13 @@ const UserBookingForm = () => {
     }
   };
 
-  // Initialize Payment & Calculations
+  // Initialize Payment Intent & Calculations
   useEffect(() => {
     if (formData.checkIn && formData.checkOut) {
       const start = new Date(formData.checkIn);
       const end = new Date(formData.checkOut);
       
       if (end > start) {
-        // 1. Calculate Nights & Total
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
         const total = room.price * nights;
@@ -153,11 +149,15 @@ const UserBookingForm = () => {
         setTotalNights(nights);
         setCalculatedTotal(total);
 
-        // 2. Initialize Stripe only if email is also present
+        // Fetch Client Secret if email is present
         if (formData.email) {
             const initPayment = async () => {
                 setIsLoading(true);
                 try {
+                    // Check for user login before creating intent (Optional but recommended)
+                    const user = JSON.parse(localStorage.getItem('user') || '{}');
+                    if (!user._id) return;
+
                     const data = await createPaymentIntent({
                         amount: total,
                         roomId: room._id,
@@ -180,9 +180,20 @@ const UserBookingForm = () => {
     }
   }, [formData.checkIn, formData.checkOut, formData.email, room]);
 
+  // --- CRITICAL FIX: Handle Booking Confirmation ---
   const handleSuccess = async (paymentIntentId: string) => {
     try {
+      // 1. Get logged-in user from LocalStorage
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+      if (!user._id) {
+        alert("User session not found. Please log in.");
+        navigate('/login');
+        return;
+      }
+
       const bookingPayload = {
+        userId: user._id, // <--- FIX: Add userId here to satisfy Backend
         paymentIntentId,
         roomId: room._id,
         checkIn: formData.checkIn,
@@ -193,13 +204,17 @@ const UserBookingForm = () => {
       };
 
       const result = await confirmBooking(bookingPayload);
+      
       setShowSuccess(true);
       setTimeout(() => {
+        // Redirect to the User's Booking History or Details
         if (result.bookingId) navigate(`/booking-details/${result.bookingId}`);
-        else navigate('/booking');
+        else navigate('/my-history');
       }, 2000);
+
     } catch (err: any) {
-      setPaymentError(err.message);
+      console.error("Booking Confirmation Error:", err);
+      setPaymentError(err.message || "Failed to save booking");
     }
   };
 
@@ -273,7 +288,6 @@ const UserBookingForm = () => {
                 
                 {/* 1. Room Card */}
                 <div className="bg-white p-6 rounded-xl shadow-sm">
-                    {/* UPDATED IMAGE TAG WITH HELPER FUNCTION */}
                     <img 
                       src={getImageUrl(room.images[0])} 
                       alt="Room" 
@@ -285,7 +299,7 @@ const UserBookingForm = () => {
                     <div className="text-2xl font-bold text-[#1a2b49]">${room.price} <span className="text-sm font-normal text-gray-500">/ night</span></div>
                 </div>
 
-                {/* 2. NEW: Bill Summary Calculation */}
+                {/* 2. Bill Summary Calculation */}
                 {totalNights > 0 && (
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">

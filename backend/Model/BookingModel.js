@@ -1,6 +1,12 @@
 import mongoose from 'mongoose';
 
 const bookingSchema = new mongoose.Schema({
+  // --- NEW: Link Booking to User ---
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
   roomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Room',

@@ -11,13 +11,14 @@ import UserProfile from './Pages/Userprofile';
 // --- User Booking Flow ---
 import Booking from './Pages/Booking';
 import UserBookingForm from './Pages/UserBookingForm';
-import UserBookingDetails from './Pages/Employee/userbookingdetails'; // Corrected path based on previous steps
+import UserBookingHistory from './Pages/Userbookinghistory'; // <--- NEW IMPORT
+import UserBookingDetails from './Pages/Employee/userbookingdetails'; 
 
 // --- Employee Pages ---
 import UserDetails from './Pages/Employee/UserDetails';
 import AddBooking from './Pages/Employee/AddBooking';
 import DetailsRooms from './Pages/Employee/DetailsRooms';
-import EmployeeBookingList from './Pages/Employee/bookinglist'; // <--- NEW PAGE
+import EmployeeBookingList from './Pages/Employee/bookinglist';
 
 function App() {
   return (
@@ -39,11 +40,14 @@ function App() {
           {/* 2. Booking Form (Selected Room) */}
           <Route path="/booking/:roomId" element={<UserBookingForm/>} />
           
-          {/* 3. Booking Success/Details (View & Delete) */}
+          {/* 3. User's Personal Booking History (List of their own bookings) */}
+          <Route path="/my-history" element={<UserBookingHistory />} /> {/* <--- NEW ROUTE */}
+          
+          {/* 4. Single Booking Details (View & Delete) */}
           <Route path="/booking-details/:id" element={<UserBookingDetails />} />
 
           {/* --- Employee Routes --- */}
-          {/* New List of All Bookings */}
+          {/* List of All Bookings (Admin View) */}
           <Route path="/employee-bookings" element={<EmployeeBookingList />} />
           
           {/* Existing Employee Pages */}
