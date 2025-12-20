@@ -133,7 +133,7 @@ const EmployeeNavBar: React.FC = () => {
 
             {/* Left Side - Employee Navigation Links */}
             <div className="flex-1 flex items-center justify-start gap-2">
-              <NavLink to="/employee-home" icon={Home} label="Home" />
+              <NavLink to="/employee_home_page" icon={Home} label="Home" />
               <NavLink to="/userdetails" icon={Users} label="User Details" />
               <NavLink to="/addbooking" icon={PlusSquare} label="Add Rooms" />
               <NavLink to="/employee-bookings" icon={CalendarRange} label="Bookings" />

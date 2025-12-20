@@ -67,7 +67,7 @@ const Login = () => {
         setTimeout(() => {
           if (data.role === 'employee') {
             console.log('Redirecting to Employee Dashboard...');
-            navigate('/employee-home'); // Navigate to Employee Page
+            navigate('/employee_home_page'); // Navigate to Employee Page
           } else {
             console.log('Redirecting to User Homepage...');
             navigate('/userpage');      // Navigate to Standard User Page

@@ -11,7 +11,7 @@ import UserProfile from './Pages/Userprofile';
 // --- User Booking Flow ---
 import Booking from './Pages/Booking';
 import UserBookingForm from './Pages/UserBookingForm';
-import UserBookingHistory from './Pages/Userbookinghistory'; // <--- NEW IMPORT
+import UserBookingHistory from './Pages/UserBookingHistory'; // <--- NEW IMPORT
 import UserBookingDetails from './Pages/Employee/userbookingdetails'; 
 
 // --- Employee Pages ---
@@ -19,6 +19,7 @@ import UserDetails from './Pages/Employee/UserDetails';
 import AddBooking from './Pages/Employee/AddBooking';
 import DetailsRooms from './Pages/Employee/DetailsRooms';
 import EmployeeBookingList from './Pages/Employee/bookinglist';
+import EmployeeHomePage from './Pages/Employee/EmployeeHomePage';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
           <Route path="/userdetails" element={<UserDetails/>} />
           <Route path="/addbooking" element={<AddBooking/>} />
           <Route path="/detailsrooms" element={<DetailsRooms/>} />
+          <Route path="/employee_home_page" element={<EmployeeHomePage/>} />
 
       </Routes>
     </Router>
