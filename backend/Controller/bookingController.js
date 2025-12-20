@@ -5,18 +5,69 @@ import mongoose from 'mongoose';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// --- 1. Create Payment Intent ---
+// --- HELPER: Check Overlapping Bookings ---
+const getOverlappingBookingsCount = async (roomId, checkIn, checkOut) => {
+  const start = new Date(checkIn);
+  const end = new Date(checkOut);
+
+  const count = await Booking.countDocuments({
+    roomId: roomId,
+    bookingStatus: 'confirmed',
+    'stayDetails.checkIn': { $lt: end }, // Booking starts before requested end
+    'stayDetails.checkOut': { $gt: start } // Booking ends after requested start
+  });
+  return count;
+};
+
+// --- 0. NEW: Check Availability for specific dates (Used by Booking Page) ---
+export const checkRoomAvailability = async (req, res) => {
+  try {
+    const { checkIn, checkOut } = req.query;
+    
+    // Fetch all rooms
+    const rooms = await Room.find();
+
+    if (!checkIn || !checkOut) {
+      // If no dates selected, just return rooms with their default capacity
+      return res.json(rooms);
+    }
+
+    // Calculate dynamic availability for each room
+    const availableRooms = await Promise.all(rooms.map(async (room) => {
+      const bookedCount = await getOverlappingBookingsCount(room._id, checkIn, checkOut);
+      // We assume room.availableCount in DB represents TOTAL PHYSICAL CAPACITY
+      const currentAvailable = room.availableCount - bookedCount;
+      
+      return {
+        ...room.toObject(),
+        availableCount: currentAvailable > 0 ? currentAvailable : 0
+      };
+    }));
+
+    res.json(availableRooms);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to check availability' });
+  }
+};
+
+// --- 1. Create Payment Intent (Updated Validation) ---
 export const createPaymentIntent = async (req, res) => {
   try {
-    const { amount, roomId, customerInfo } = req.body;
+    const { amount, roomId, customerInfo, checkIn, checkOut } = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(roomId)) return res.status(400).json({ error: 'Invalid Room ID' });
     
     const room = await Room.findById(roomId);
     if (!room) return res.status(404).json({ error: 'Room not found' });
 
-    if (room.availableCount < 1) {
-        return res.status(400).json({ error: 'Room is sold out' });
+    // Validate Date-Based Availability
+    if (checkIn && checkOut) {
+        const bookedCount = await getOverlappingBookingsCount(roomId, checkIn, checkOut);
+        const currentAvailable = room.availableCount - bookedCount;
+        
+        if (currentAvailable < 1) {
+             return res.status(400).json({ error: 'Room is sold out for these dates' });
+        }
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -32,10 +83,9 @@ export const createPaymentIntent = async (req, res) => {
   }
 };
 
-// --- 2. Confirm Booking (UPDATED WITH USER ID) ---
+// --- 2. Confirm Booking (FIXED: Does not permanently reduce stock) ---
 export const confirmBooking = async (req, res) => {
   try {
-    // Note: userId is now destructured from the request body
     const { paymentIntentId, roomId, checkIn, checkOut, guests, customerInfo, totalAmount, userId } = req.body;
 
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -44,7 +94,7 @@ export const confirmBooking = async (req, res) => {
     }
 
     const booking = new Booking({
-      userId, // <--- SAVING THE USER ID
+      userId,
       roomId, 
       customerInfo,
       stayDetails: { 
@@ -63,9 +113,8 @@ export const confirmBooking = async (req, res) => {
 
     const savedBooking = await booking.save();
 
-    await Room.findByIdAndUpdate(roomId, { 
-        $inc: { availableCount: -1 } 
-    });
+    // REMOVED: Room.findByIdAndUpdate logic. 
+    // We now rely on Date overlap checks to determine availability.
 
     res.json({ success: true, bookingId: savedBooking._id, message: 'Confirmed' });
   } catch (error) {
@@ -74,7 +123,7 @@ export const confirmBooking = async (req, res) => {
   }
 };
 
-// --- 3. Get All Bookings (For Employees/Admin) ---
+// --- 3. Get All Bookings ---
 export const getAllBookings = async (req, res) => {
   try {
     const bookings = await Booking.find()
@@ -86,7 +135,7 @@ export const getAllBookings = async (req, res) => {
   }
 };
 
-// --- 4. NEW: Get Only Specific User Bookings ---
+// --- 4. Get User Bookings ---
 export const getUserBookings = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -114,7 +163,7 @@ export const getBooking = async (req, res) => {
   }
 };
 
-// --- 6. Delete Booking (Restock Logic) ---
+// --- 6. Delete Booking (FIXED: Does not permanently increase stock) ---
 export const deleteBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
@@ -123,15 +172,12 @@ export const deleteBooking = async (req, res) => {
         return res.status(404).json({ error: 'Booking not found' });
     }
 
-    if (booking.roomId) {
-        await Room.findByIdAndUpdate(booking.roomId, { 
-            $inc: { availableCount: 1 } 
-        });
-    }
+    // REMOVED: Room.findByIdAndUpdate logic.
+    // Stock is restored automatically because the Booking record is gone/cancelled.
 
     await Booking.findByIdAndDelete(req.params.id);
 
-    res.json({ message: 'Booking deleted and Room stock restored' });
+    res.json({ message: 'Booking deleted' });
   } catch (error) {
     console.error("Delete Error:", error);
     res.status(500).json({ error: 'Server Error' });

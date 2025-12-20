@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  CheckCircle, ArrowLeft, AlertOctagon, Calculator 
+  CheckCircle, ArrowLeft, AlertOctagon, Calculator, Lock 
 } from 'lucide-react';
 import { Elements, useStripe, useElements, PaymentElement } from '@stripe/react-stripe-js';
 import { getStripe } from '../utils/stripe';
@@ -68,11 +68,16 @@ const UserBookingForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const room = location.state?.room as Room;
-  const today = new Date().toISOString().split('T')[0];
+  
+  // Retrieve dates passed from previous page
+  const passedCheckIn = location.state?.checkIn || '';
+  const passedCheckOut = location.state?.checkOut || '';
 
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '', country: '',
-    checkIn: '', checkOut: '', guests: 1, paymentMethod: 'stripe'
+    checkIn: passedCheckIn, 
+    checkOut: passedCheckOut,
+    guests: 1, paymentMethod: 'stripe'
   });
 
   const [clientSecret, setClientSecret] = useState('');
@@ -80,11 +85,9 @@ const UserBookingForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [paymentError, setPaymentError] = useState('');
   
-  // Calculations
   const [calculatedTotal, setCalculatedTotal] = useState(0);
   const [totalNights, setTotalNights] = useState(0);
 
-  // Helper: Image URL
   const getImageUrl = (path: string) => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
@@ -93,46 +96,22 @@ const UserBookingForm = () => {
     return `http://localhost:5000${finalPath}`;
   };
 
-  // Redirect if room is invalid
+  // Redirect if room is invalid or dates are missing
   useEffect(() => { 
     if (!room) {
         navigate('/booking');
-    } else if (room.availableCount < 1) {
-        const timer = setTimeout(() => navigate('/booking'), 3000);
-        return () => clearTimeout(timer);
+    } else if (!passedCheckIn || !passedCheckOut) {
+        alert("Dates are required. Returning to booking page.");
+        navigate('/booking');
     }
-  }, [room, navigate]);
+  }, [room, passedCheckIn, passedCheckOut, navigate]);
 
-  if (room && room.availableCount < 1) {
-    return (
-        <div className="h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-4">
-            <AlertOctagon className="w-20 h-20 text-red-500 mb-4" />
-            <h1 className="text-3xl font-bold text-gray-800">Room Sold Out</h1>
-            <p className="text-gray-600 mt-2">Redirecting you back...</p>
-        </div>
-    );
-  }
+  if (!room) return null;
 
   const handleInputChange = (e: any) => {
     const { name, value } = e.target;
-    if (name === 'checkIn') {
-        if (formData.checkOut && value >= formData.checkOut) {
-            setFormData(prev => ({ ...prev, [name]: value, checkOut: '' }));
-            setClientSecret('');
-            setCalculatedTotal(0);
-            setTotalNights(0);
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-    } else if (name === 'checkOut') {
-        if (formData.checkIn && value <= formData.checkIn) {
-            alert("Check-out date must be after check-in date");
-            return; 
-        }
-        setFormData(prev => ({ ...prev, [name]: value }));
-    } else {
-        setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    // We do NOT handle CheckIn/CheckOut here anymore because they are read-only
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   // Initialize Payment Intent & Calculations
@@ -149,12 +128,10 @@ const UserBookingForm = () => {
         setTotalNights(nights);
         setCalculatedTotal(total);
 
-        // Fetch Client Secret if email is present
         if (formData.email) {
             const initPayment = async () => {
                 setIsLoading(true);
                 try {
-                    // Check for user login before creating intent (Optional but recommended)
                     const user = JSON.parse(localStorage.getItem('user') || '{}');
                     if (!user._id) return;
 
@@ -167,8 +144,9 @@ const UserBookingForm = () => {
                         customerInfo: formData
                     });
                     setClientSecret(data.clientSecret);
-                } catch (err) {
+                } catch (err: any) {
                     console.error("Stripe Error", err);
+                    setPaymentError(err.message || "Unable to initiate payment");
                 } finally {
                     setIsLoading(false);
                 }
@@ -180,10 +158,8 @@ const UserBookingForm = () => {
     }
   }, [formData.checkIn, formData.checkOut, formData.email, room]);
 
-  // --- CRITICAL FIX: Handle Booking Confirmation ---
   const handleSuccess = async (paymentIntentId: string) => {
     try {
-      // 1. Get logged-in user from LocalStorage
       const user = JSON.parse(localStorage.getItem('user') || '{}');
 
       if (!user._id) {
@@ -193,7 +169,7 @@ const UserBookingForm = () => {
       }
 
       const bookingPayload = {
-        userId: user._id, // <--- FIX: Add userId here to satisfy Backend
+        userId: user._id,
         paymentIntentId,
         roomId: room._id,
         checkIn: formData.checkIn,
@@ -207,7 +183,6 @@ const UserBookingForm = () => {
       
       setShowSuccess(true);
       setTimeout(() => {
-        // Redirect to the User's Booking History or Details
         if (result.bookingId) navigate(`/booking-details/${result.bookingId}`);
         else navigate('/my-history');
       }, 2000);
@@ -217,8 +192,6 @@ const UserBookingForm = () => {
       setPaymentError(err.message || "Failed to save booking");
     }
   };
-
-  if (!room) return null;
 
   if (showSuccess) {
     return (
@@ -231,13 +204,6 @@ const UserBookingForm = () => {
       </div>
     );
   }
-
-  const getMinCheckOutDate = () => {
-      if (!formData.checkIn) return today;
-      const date = new Date(formData.checkIn);
-      date.setDate(date.getDate() + 1);
-      return date.toISOString().split('T')[0];
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 pb-10">
@@ -256,19 +222,39 @@ const UserBookingForm = () => {
                 <input name="country" placeholder="Country" onChange={handleInputChange} className="w-full p-3 border rounded" />
 
                 <div className="flex gap-4">
-                    <div className="w-1/2">
+                    <div className="w-1/2 relative">
                         <label className="text-sm text-gray-500 font-medium mb-1 block">Check In</label>
-                        <input type="date" name="checkIn" min={today} value={formData.checkIn} onChange={handleInputChange} className="w-full p-3 border rounded" />
+                        {/* READ ONLY INPUT */}
+                        <div className="relative">
+                            <input 
+                                type="text" 
+                                value={formData.checkIn} 
+                                readOnly 
+                                disabled
+                                className="w-full p-3 border rounded bg-gray-100 text-gray-500 cursor-not-allowed" 
+                            />
+                            <Lock size={14} className="absolute right-3 top-4 text-gray-400"/>
+                        </div>
                     </div>
-                    <div className="w-1/2">
+                    <div className="w-1/2 relative">
                         <label className="text-sm text-gray-500 font-medium mb-1 block">Check Out</label>
-                        <input type="date" name="checkOut" disabled={!formData.checkIn} min={getMinCheckOutDate()} value={formData.checkOut} onChange={handleInputChange} className={`w-full p-3 border rounded ${!formData.checkIn ? 'bg-gray-100' : ''}`} />
+                        {/* READ ONLY INPUT */}
+                        <div className="relative">
+                            <input 
+                                type="text" 
+                                value={formData.checkOut} 
+                                readOnly 
+                                disabled
+                                className="w-full p-3 border rounded bg-gray-100 text-gray-500 cursor-not-allowed" 
+                            />
+                            <Lock size={14} className="absolute right-3 top-4 text-gray-400"/>
+                        </div>
                     </div>
                 </div>
 
                 {room.availableCount <= 2 && (
                     <div className="mt-2 p-3 bg-orange-50 border border-orange-200 text-orange-700 rounded text-sm font-medium">
-                        🔥 Hurry! Only {room.availableCount} room(s) left.
+                        🔥 High demand! Only {room.availableCount} room(s) in total.
                     </div>
                 )}
 
@@ -285,8 +271,6 @@ const UserBookingForm = () => {
 
             {/* RIGHT COLUMN: ROOM INFO & CALCULATOR */}
             <div className="h-fit space-y-6">
-                
-                {/* 1. Room Card */}
                 <div className="bg-white p-6 rounded-xl shadow-sm">
                     <img 
                       src={getImageUrl(room.images[0])} 
@@ -299,7 +283,6 @@ const UserBookingForm = () => {
                     <div className="text-2xl font-bold text-[#1a2b49]">${room.price} <span className="text-sm font-normal text-gray-500">/ night</span></div>
                 </div>
 
-                {/* 2. Bill Summary Calculation */}
                 {totalNights > 0 && (
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
                         <h3 className="font-bold text-gray-800 flex items-center gap-2 mb-4">
@@ -311,10 +294,6 @@ const UserBookingForm = () => {
                             <div className="flex justify-between text-gray-600">
                                 <span>{room.roomType} x {totalNights} nights</span>
                                 <span>${room.price * totalNights}</span>
-                            </div>
-                            <div className="flex justify-between text-gray-600">
-                                <span>Cleaning Fee</span>
-                                <span>$0.00</span>
                             </div>
                             <div className="h-px bg-gray-200 my-2"></div>
                             <div className="flex justify-between text-lg font-bold text-[#1a2b49]">
