@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Calendar, User, CheckCircle, Clock, Eye, Search, Loader, Filter
+  Calendar, User, CheckCircle, Clock, Eye, Search, Loader, Filter, XCircle
 } from 'lucide-react';
 import { getAllBookings } from '../../service/paymentservice.ts';
 import EmployeeNavBar from "../../Header/EmployeeNav.tsx";
@@ -108,6 +108,7 @@ const EmployeeBookingList = () => {
                 <tbody className="divide-y divide-gray-100">
                   {filteredBookings.map((booking) => (
                     <tr key={booking._id} className="hover:bg-gray-50 transition-colors">
+                      {/* Guest Info */}
                       <td className="px-6 py-4">
                         <div className="flex items-center">
                           <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3">
@@ -121,9 +122,13 @@ const EmployeeBookingList = () => {
                           </div>
                         </div>
                       </td>
+
+                      {/* Room Info */}
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {booking.roomId?.roomType || 'Unknown Room'}
                       </td>
+
+                      {/* Dates */}
                       <td className="px-6 py-4 text-sm text-gray-600">
                         <div className="flex flex-col">
                           <span>{new Date(booking.stayDetails.checkIn).toLocaleDateString()}</span>
@@ -131,28 +136,43 @@ const EmployeeBookingList = () => {
                           <span>{new Date(booking.stayDetails.checkOut).toLocaleDateString()}</span>
                         </div>
                       </td>
+
+                      {/* Status Badge */}
                       <td className="px-6 py-4">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           booking.bookingStatus === 'confirmed' 
                             ? 'bg-green-100 text-green-800' 
+                            : booking.bookingStatus === 'cancelled'
+                            ? 'bg-red-100 text-red-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
-                          {booking.bookingStatus === 'confirmed' ? <CheckCircle className="w-3 h-3 mr-1"/> : <Clock className="w-3 h-3 mr-1"/>}
+                          {booking.bookingStatus === 'confirmed' && <CheckCircle className="w-3 h-3 mr-1"/>}
+                          {booking.bookingStatus === 'cancelled' && <XCircle className="w-3 h-3 mr-1"/>}
+                          {booking.bookingStatus === 'pending' && <Clock className="w-3 h-3 mr-1"/>}
                           {booking.bookingStatus}
                         </span>
                       </td>
+
+                      {/* Amount */}
                       <td className="px-6 py-4 text-sm font-bold text-gray-900">
                         ${booking.paymentInfo.amount}
                       </td>
+
+                      {/* --- UPDATED BUTTONS SECTION --- */}
                       <td className="px-6 py-4">
                         <button 
                           onClick={() => navigate(`/booking-details/${booking._id}`)}
-                          className="text-blue-600 hover:text-blue-900 font-medium text-sm flex items-center hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors"
+                          className={`font-medium text-sm flex items-center px-3 py-1.5 rounded-lg transition-colors border ${
+                            booking.bookingStatus === 'cancelled'
+                              ? 'text-red-700 bg-red-50 hover:bg-red-100 border-red-200'  // Red for Cancelled
+                              : 'text-green-700 bg-green-50 hover:bg-green-100 border-green-200' // Green for Confirmed (and others)
+                          }`}
                         >
                           <Eye className="w-4 h-4 mr-1" />
-                          View
+                          Details
                         </button>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
