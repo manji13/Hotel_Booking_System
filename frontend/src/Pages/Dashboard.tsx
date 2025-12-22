@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Car, Shield, Coffee, Calendar, X } from 'lucide-react';
+import { MapPin, Car, Shield, Coffee, Calendar, X , Globe , Phone } from 'lucide-react';
 import HomeNav from '../Header/HomeNav.tsx'; 
 import { motion, useInView, useScroll, useTransform } from 'framer-motion';
 
@@ -330,6 +330,35 @@ const Home = () => {
           </div>
         </div>
       )}
+
+           <footer className="relative w-full z-20 py-6 bg-gray-900/90 backdrop-blur-md border-t border-white/10 text-white/80 mt-auto">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-center space-y-3 md:space-y-0 text-xs sm:text-sm text-center">
+           
+           <div className="flex items-center space-x-2 px-3 md:border-r md:border-white/20">
+             <span className="font-semibold text-blue-200">Hotel Name:</span> 
+             <span>Manjitha Kavishan</span>
+           </div>
+
+           <div className="flex items-center space-x-2 px-3 md:border-r md:border-white/20">
+             <Phone size={14} className="text-blue-400" />
+             <span className="font-semibold text-blue-200">Contact:</span> 
+             <span>+94 76 468 7979</span>
+           </div>
+
+           <div className="flex items-center space-x-2 px-3 md:border-r md:border-white/20">
+             <MapPin size={14} className="text-blue-400" />
+             <span className="font-semibold text-blue-200">Location:</span> 
+             <span>Kataragama</span>
+           </div>
+
+           <div className="flex items-center space-x-2 px-3">
+             <Globe size={14} className="text-blue-400" />
+             <span className="font-semibold text-blue-200">Site created:</span> 
+             <span>@2025</span>
+           </div>
+        </div>
+      </footer>
+
     </div>
   );
 };

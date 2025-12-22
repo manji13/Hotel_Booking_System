@@ -1,8 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Car, Shield, Coffee, Calendar, Compass, Star, ArrowRight } from 'lucide-react';
+import { MapPin, Car, Shield, Coffee, Calendar, Compass, Star, ArrowRight, MessageSquare, Send, Loader2 } from 'lucide-react';
 import UserNavbar from "../Header/UserNav.jsx";
-import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast'; 
+
+import Footer from '../Footer/Footer.tsx';
+
+// Define Interface for Review
+interface Review {
+  _id: string;
+  name: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
 
 const Userpage = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -12,19 +24,94 @@ const Userpage = () => {
   const welcomeRef = useRef(null);
   const featuresRef = useRef(null);
   const exploreRef = useRef(null);
-  const locationRef = useRef(null); // Added Location Ref
+  const locationRef = useRef(null);
+  const feedbackRef = useRef(null); 
   const ctaRef = useRef(null);
   
   // 2. Setup InView hooks
   const welcomeInView = useInView(welcomeRef, { once: true, margin: "-100px" });
   const featuresInView = useInView(featuresRef, { once: true, margin: "-100px" });
   const exploreInView = useInView(exploreRef, { once: true, margin: "-100px" });
-  const locationInView = useInView(locationRef, { once: true, margin: "-100px" }); // Added Location InView
+  const locationInView = useInView(locationRef, { once: true, margin: "-100px" });
+  const feedbackInView = useInView(feedbackRef, { once: true, margin: "-100px" });
   const ctaInView = useInView(ctaRef, { once: true, margin: "-100px" });
 
   const { scrollY } = useScroll();
   const y = useTransform(scrollY, [0, 500], [0, 100]);
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
+
+  // --- Feedback State ---
+  const [displayedReviews, setDisplayedReviews] = useState<Review[]>([]); // Reviews currently shown
+  const [viewMode, setViewMode] = useState<'top' | 'all'>('top'); // Toggle state
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+
+  const [feedbackForm, setFeedbackForm] = useState({
+    name: '',
+    rating: 5,
+    comment: ''
+  });
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  // --- Fetch Reviews Helper ---
+  const fetchReviews = async (mode: 'top' | 'all') => {
+    setIsLoadingReviews(true);
+    try {
+      const endpoint = mode === 'top' ? '/top' : '/all';
+      const response = await fetch(`http://localhost:5000/api/feedback${endpoint}`);
+      if (response.ok) {
+        const data = await response.json();
+        setDisplayedReviews(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch reviews", error);
+      toast.error("Could not load reviews");
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
+  // Initial Load (Top 3)
+  useEffect(() => {
+    fetchReviews('top');
+  }, []);
+
+  // --- Toggle View Mode ---
+  const toggleViewMode = () => {
+    const newMode = viewMode === 'top' ? 'all' : 'top';
+    setViewMode(newMode);
+    fetchReviews(newMode);
+  };
+
+  // --- Handle Feedback Submit ---
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackForm.name || !feedbackForm.comment) {
+        toast.error("Please fill in all fields");
+        return;
+    }
+
+    setIsSubmittingFeedback(true);
+    try {
+        const response = await fetch('http://localhost:5000/api/feedback/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(feedbackForm)
+        });
+
+        if (response.ok) {
+            toast.success("Thank you for your feedback!");
+            setFeedbackForm({ name: '', rating: 5, comment: '' });
+            // Refresh the current view
+            fetchReviews(viewMode); 
+        } else {
+            toast.error("Failed to submit feedback");
+        }
+    } catch (error) {
+        toast.error("Server error");
+    } finally {
+        setIsSubmittingFeedback(false);
+    }
+  };
 
   const galleryImages = [
     "https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80",
@@ -78,7 +165,7 @@ const Userpage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white font-sans text-gray-800">
       <UserNavbar />
       
       {/* Enhanced Hero Section */}
@@ -332,7 +419,7 @@ const Userpage = () => {
         </div>
       </section>
 
-      {/* New Location Section with Map */}
+      {/* Location Section */}
       <section ref={locationRef} className="py-24 bg-gray-50 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4">
           <motion.div 
@@ -406,6 +493,174 @@ const Userpage = () => {
         </div>
       </section>
 
+      {/* ---------------------------------------------------------------------- */}
+      {/* FEEDBACK SECTION */}
+      {/* ---------------------------------------------------------------------- */}
+      <section ref={feedbackRef} className="py-24 bg-white overflow-hidden relative">
+        {/* Background Decor */}
+        <div className="absolute top-0 right-0 w-1/3 h-full bg-yellow-50/50 skew-x-12 pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
+            <motion.div 
+                className="text-center mb-16"
+                initial={{ opacity: 0, y: 30 }}
+                animate={feedbackInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                transition={{ duration: 0.6 }}
+            >
+                <div className="inline-flex items-center gap-2 text-yellow-400 mb-4">
+                    <MessageSquare size={16} />
+                    <span className="text-sm font-semibold tracking-widest uppercase">Guest Reviews</span>
+                </div>
+                <h2 className="text-5xl font-bold text-gray-800 mb-6 font-serif">Stories of Satisfaction</h2>
+                <div className="w-24 h-1 bg-gradient-to-r from-yellow-400 to-orange-400 mx-auto"></div>
+            </motion.div>
+
+            <div className="grid lg:grid-cols-2 gap-16">
+                
+                {/* LEFT: Feedback Form */}
+                <motion.div
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={feedbackInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
+                    transition={{ duration: 0.8 }}
+                    className="bg-gray-50 p-8 rounded-3xl shadow-lg border border-gray-100 h-fit"
+                >
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Share Your Experience</h3>
+                    <p className="text-gray-500 mb-6">We value your opinion. Let us know how your stay was.</p>
+
+                    <form onSubmit={handleFeedbackSubmit} className="space-y-5">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Your Name</label>
+                            <input 
+                                type="text"
+                                className="w-full p-4 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-yellow-400 outline-none transition-all"
+                                placeholder="John Doe"
+                                value={feedbackForm.name}
+                                onChange={(e) => setFeedbackForm({...feedbackForm, name: e.target.value})}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Your Rating</label>
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                        type="button"
+                                        key={star}
+                                        onClick={() => setFeedbackForm({...feedbackForm, rating: star})}
+                                        className={`p-2 rounded-full transition-all ${feedbackForm.rating >= star ? 'text-yellow-400 scale-110' : 'text-gray-300'}`}
+                                    >
+                                        <Star size={32} fill="currentColor" />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Your Comment</label>
+                            <textarea 
+                                className="w-full p-4 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-yellow-400 outline-none transition-all h-32 resize-none"
+                                placeholder="Tell us about your stay..."
+                                value={feedbackForm.comment}
+                                onChange={(e) => setFeedbackForm({...feedbackForm, comment: e.target.value})}
+                            ></textarea>
+                        </div>
+
+                        <button 
+                            type="submit"
+                            disabled={isSubmittingFeedback}
+                            className={`w-full py-4 bg-gray-900 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all ${isSubmittingFeedback ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        >
+                            {isSubmittingFeedback ? 'Sending...' : (
+                                <>
+                                    Submit Feedback <Send size={18} />
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </motion.div>
+
+                {/* RIGHT: Reviews Display Area */}
+                <motion.div
+                    initial={{ opacity: 0, x: 50 }}
+                    animate={feedbackInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 50 }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    className="flex flex-col h-[600px]" // Fixed height for scroll area
+                >
+                    <div className="flex justify-between items-end mb-6">
+                        <div>
+                            <h3 className="text-2xl font-bold text-gray-900">Guest Favorites</h3>
+                            <p className="text-yellow-500 font-semibold text-sm mt-1">
+                                {viewMode === 'top' ? 'Showing Top 5-Star Ratings' : 'Showing All Reviews'}
+                            </p>
+                        </div>
+                        <button 
+                            onClick={toggleViewMode}
+                            className="text-sm font-bold text-gray-500 hover:text-gray-900 flex items-center gap-1 transition-colors px-4 py-2 rounded-lg hover:bg-gray-100"
+                        >
+                            {viewMode === 'top' ? (
+                                <>View All Reviews <ArrowRight size={16} /></>
+                            ) : (
+                                <>Show Top Only <Star size={16} /></>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Scrollable Container */}
+                    <div className="space-y-4 flex-grow overflow-y-auto pr-2 custom-scrollbar">
+                        {isLoadingReviews ? (
+                            <div className="h-full flex items-center justify-center">
+                                <Loader2 className="w-8 h-8 text-yellow-400 animate-spin" />
+                            </div>
+                        ) : displayedReviews.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center bg-gray-50 rounded-3xl border border-dashed border-gray-300 text-gray-400">
+                                <MessageSquare size={48} className="mb-4 opacity-20" />
+                                <p>No reviews found yet.</p>
+                            </div>
+                        ) : (
+                            <AnimatePresence mode="popLayout">
+                                {displayedReviews.map((review, idx) => (
+                                    <motion.div 
+                                        key={review._id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        transition={{ delay: idx * 0.05 }}
+                                        className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                                    >
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-400 rounded-full flex items-center justify-center text-white font-bold text-lg uppercase">
+                                                    {review.name.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900">{review.name}</h4>
+                                                    <div className="flex gap-0.5 text-yellow-400">
+                                                        {[...Array(5)].map((_, i) => (
+                                                            <Star 
+                                                                key={i} 
+                                                                size={12} 
+                                                                fill={i < review.rating ? "currentColor" : "none"} 
+                                                                className={i < review.rating ? "" : "text-gray-300"}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span className="text-xs text-gray-400">
+                                                {new Date(review.createdAt).toLocaleDateString()}
+                                            </span>
+                                        </div>
+                                        <p className="text-gray-600 text-sm italic leading-relaxed">"{review.comment}"</p>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        )}
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+      </section>
+
       {/* Enhanced CTA Section */}
       <section ref={ctaRef} className="py-24 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center px-4">
@@ -452,7 +707,9 @@ const Userpage = () => {
           </motion.div>
         </div>
       </section>
+      <Footer />
     </div>
+    
   );
 };
 

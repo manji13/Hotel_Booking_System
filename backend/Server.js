@@ -1,4 +1,4 @@
-import 'dotenv/config'; // <--- THIS MUST BE THE FIRST LINE
+import 'dotenv/config'; 
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -8,8 +8,7 @@ import connectDB from './db.js';
 import userRoutes from './Routes/userRoutes.js';
 import roomRoutes from './Routes/roomRoutes.js';
 import paymentRoutes from './Routes/bookingRoute.js';
-
-// dotenv.config(); <--- Remove this line, it's done at the top now
+import FeedbackRoute from './Routes/FeedbackRoute.js'; // This will now work because we used 'export default' in the route file
 
 // DEBUG: Check Stripe key from server.js
 console.log("DEBUG STRIPE KEY (server.js):", process.env.STRIPE_SECRET_KEY ? "Loaded" : "Missing");
@@ -46,6 +45,7 @@ app.get('/api/test', (req, res) => res.json({ message: "Backend and Frontend are
 app.use('/api/users', userRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/feedback', FeedbackRoute);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

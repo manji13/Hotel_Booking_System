@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { BedDouble, Users, Calendar, Search, ChevronLeft, ChevronRight, AlertCircle, XCircle } from 'lucide-react';
+import { BedDouble, Users, Calendar, Search, ChevronLeft, ChevronRight, AlertCircle, XCircle, MapPin, Star, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import UserNavbar from "../Header/UserNav.jsx";
 import { checkAvailability } from '../service/paymentservice'; 
+
+import Footer from '../Footer/Footer.tsx';
 
 interface Room {
   _id: string;
@@ -16,7 +18,6 @@ interface Room {
   availableCount: number;
 }
 
-// Helper to construct image URL
 const getImageUrl = (imagePath: string) => {
   if (!imagePath) return '';
   if (imagePath.startsWith('http')) return imagePath;
@@ -46,7 +47,6 @@ const RoomCard = ({
   const hasMultipleImages = room.images && room.images.length > 1;
   const isSoldOut = room.availableCount < 1;
 
-  // --- Image Change Logic ---
   const paginate = useCallback((newDirection: number) => {
     setDirection(newDirection);
     setCurrentImgIdx((prev) => {
@@ -57,14 +57,11 @@ const RoomCard = ({
     });
   }, [room.images.length]);
 
-  // --- Auto Change Images (Resets timer on manual click) ---
   useEffect(() => {
     if (!hasMultipleImages) return;
-    
     const timer = setInterval(() => {
         paginate(1);
     }, 5000); 
-
     return () => clearInterval(timer);
   }, [hasMultipleImages, paginate, currentImgIdx]);
 
@@ -79,7 +76,6 @@ const RoomCard = ({
         onBookAttempt(); 
         return;
     }
-
     if (!isSoldOut) {
         navigate(`/booking/${room._id}`, { state: { room, checkIn, checkOut } });
     }
@@ -87,15 +83,17 @@ const RoomCard = ({
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: index * 0.1 }}
-      className={`flex flex-col md:flex-row gap-6 items-center bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100 ${index % 2 === 1 ? 'md:flex-row-reverse' : ''}`}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      // LAYOUT: Increased height and width, but removed clunky borders
+      className={`group relative flex flex-col lg:flex-row h-auto lg:h-[380px] bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 ${isSoldOut ? 'opacity-90 grayscale-[0.3]' : ''}`}
     >
-      {/* Left Side: Image Carousel */}
+      {/* --- Visual Tracker 1: Large Image Area (55% width) --- */}
       <div 
-        className={`group w-full md:w-5/12 h-[220px] md:h-[260px] overflow-hidden relative rounded-lg bg-gray-100 ${!isSoldOut ? 'cursor-pointer' : 'cursor-not-allowed grayscale'}`}
-        onClick={handleBookClick} 
+        className="relative w-full lg:w-[55%] h-[280px] lg:h-full overflow-hidden bg-gray-200 cursor-pointer"
+        onClick={handleBookClick}
       >
         <AnimatePresence initial={false} custom={direction}>
           {room.images && room.images.length > 0 ? (
@@ -109,87 +107,112 @@ const RoomCard = ({
               exit="exit"
               transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
               alt={room.roomType}
-              className="absolute w-full h-full object-cover"
-              onError={(e) => (e.target as HTMLImageElement).src = "https://via.placeholder.com/600x400?text=No+Image"}
+              className="absolute w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No Image</div>
+            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+               <span className="flex flex-col items-center gap-2"><MapPin className="opacity-50"/> No Image Available</span>
+            </div>
           )}
         </AnimatePresence>
 
-        {/* Sold Out Overlay */}
-        {isSoldOut && (
-            <div className="absolute inset-0 bg-black/40 z-20 flex items-center justify-center">
-                <span className="bg-red-600 text-white px-4 py-2 font-bold uppercase tracking-widest text-sm rounded shadow-lg">
-                    {checkIn && checkOut ? 'Booked for Dates' : 'Sold Out'}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80"></div>
+        
+        {/* Status Badge - Sleek */}
+        <div className="absolute top-4 left-4 z-20">
+            {isSoldOut ? (
+                <span className="bg-red-600 text-white px-3 py-1 font-semibold uppercase text-[11px] tracking-wider rounded-md shadow-lg flex items-center gap-2">
+                    <XCircle size={14}/> Sold Out
                 </span>
-            </div>
-        )}
+            ) : (
+                <span className="bg-emerald-600 text-white px-3 py-1 font-semibold uppercase text-[11px] tracking-wider rounded-md shadow-lg flex items-center gap-2">
+                    <CheckCircle2 size={14}/> {room.availableCount} Available
+                </span>
+            )}
+        </div>
 
-        {/* Navigation Arrows */}
+        {/* Navigation - Minimalist */}
         {hasMultipleImages && !isSoldOut && (
           <>
             <button 
-                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all z-10 text-gray-800 hover:scale-110" 
+                className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 p-2 rounded-full text-white transition-all z-20 opacity-0 group-hover:opacity-100" 
                 onClick={(e) => { e.stopPropagation(); paginate(-1); }} 
             >
                 <ChevronLeft size={20} />
             </button>
             <button 
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-all z-10 text-gray-800 hover:scale-110" 
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 p-2 rounded-full text-white transition-all z-20 opacity-0 group-hover:opacity-100" 
                 onClick={(e) => { e.stopPropagation(); paginate(1); }} 
             >
                 <ChevronRight size={20} />
             </button>
-            
-            {/* Dots Indicator */}
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {room.images.map((_, idx) => (
-                    <div 
-                        key={idx} 
-                        className={`w-2 h-2 rounded-full transition-all duration-300 shadow-sm ${idx === currentImgIdx ? 'bg-white scale-110' : 'bg-white/50'}`} 
-                    />
-                ))}
-            </div>
           </>
         )}
       </div>
 
-      {/* Right Side: Content */}
-      <div className="w-full md:w-7/12 flex flex-col justify-center text-left space-y-3 px-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-xl font-medium tracking-wide text-gray-800">{room.roomType}</h2>
-            <div className="mt-1">
-                {isSoldOut ? (
-                    <span className="text-red-500 text-xs font-bold flex items-center gap-1">
-                        <AlertCircle size={12} /> Unavailable
-                    </span>
-                ) : (
-                    <span className="text-green-600 text-xs font-bold bg-green-50 px-2 py-0.5 rounded-full">
-                        {room.availableCount} Available
-                    </span>
-                )}
+      {/* --- Visual Tracker 2: Info (Right Side) --- */}
+      <div className="flex-1 p-6 lg:p-8 flex flex-col justify-between relative">
+        
+        <div>
+            <div className="flex justify-between items-start mb-3">
+                <div>
+                    <div className="flex items-center gap-1 mb-1">
+                        {[...Array(5)].map((_, i) => (
+                            <Star key={i} size={12} className="text-yellow-400 fill-yellow-400" />
+                        ))}
+                        <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold ml-1">Luxury Collection</span>
+                    </div>
+                    {/* TITLE: Large but elegant */}
+                    <h2 className="text-3xl font-serif text-gray-900 group-hover:text-blue-800 transition-colors">
+                        {room.roomType}
+                    </h2>
+                </div>
+                <div className="text-right">
+                    <span className="block text-3xl font-bold text-blue-900">${room.price}</span>
+                    <span className="text-xs text-gray-500 font-medium">/ night</span>
+                </div>
             </div>
-          </div>
-          <span className="text-sm font-semibold text-[#1a2b49] bg-blue-50 px-3 py-1 rounded-full">${room.price} <span className="text-xs font-normal text-gray-500">/ night</span></span>
+
+            <div className="w-12 h-1 bg-blue-100 mb-4"></div>
+
+            <p className="text-gray-600 text-sm leading-relaxed mb-6 line-clamp-3">
+                {room.description || "Experience refined luxury with our carefully curated room amenities and breathtaking views."}
+            </p>
+
+            {/* Amenities - Clean Look */}
+            <div className="flex gap-6 mb-6">
+                <div className="flex items-center gap-2 text-gray-700">
+                    <BedDouble size={20} className="text-blue-900" />
+                    <span className="text-sm font-medium">{room.beds} Beds</span>
+                </div>
+                <div className="h-6 w-px bg-gray-200"></div>
+                <div className="flex items-center gap-2 text-gray-700">
+                    <Users size={20} className="text-blue-900" />
+                    <span className="text-sm font-medium">Max {room.capacity} Guests</span>
+                </div>
+            </div>
         </div>
 
-        <p className="text-gray-500 text-sm leading-relaxed line-clamp-2">{room.description || "Experience luxury and comfort."}</p>
-
-        <div className="flex items-center gap-6 py-3 border-t border-gray-100 mt-2">
-          <div className="flex items-center gap-2 text-gray-600"><BedDouble size={18} className="text-[#1a2b49]" /><span className="text-xs font-semibold uppercase tracking-wider text-gray-500">{room.beds} Beds</span></div>
-          <div className="flex items-center gap-2 text-gray-600"><Users size={18} className="text-[#1a2b49]" /><span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Max {room.capacity}</span></div>
-        </div>
-
-        <div className="pt-1">
-          <button 
-            onClick={handleBookClick} 
-            disabled={isSoldOut} 
-            className={`w-full md:w-auto px-6 py-2.5 text-[11px] font-bold tracking-[0.15em] uppercase transition-colors rounded shadow-sm ${isSoldOut ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#1a2b49] text-white hover:bg-[#2c4a7c]'}`}
-          >
-            {isSoldOut ? 'Unavailable' : 'View Details'}
-          </button>
+        {/* Bottom: Button (Standard Size, not Jumbo) */}
+        <div className="mt-auto pt-4 border-t border-gray-100">
+            <button 
+                onClick={handleBookClick} 
+                disabled={isSoldOut} 
+                className={`w-full py-3 px-6 rounded-lg font-semibold text-sm tracking-wide uppercase flex items-center justify-between transition-all duration-300 ${
+                    isSoldOut 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                    : 'bg-[#1a2b49] text-white hover:bg-blue-800 shadow-md hover:shadow-lg'
+                }`}
+            >
+                {isSoldOut ? (
+                    'Sold Out'
+                ) : (
+                    <>
+                        <span>View Details & Book</span>
+                        <ArrowRight size={18} />
+                    </>
+                )}
+            </button>
         </div>
       </div>
     </motion.div>
@@ -205,12 +228,10 @@ const Booking = () => {
   const [checkIn, setCheckIn] = useState('');
   const [checkOut, setCheckOut] = useState('');
   
-  // Validation States
   const [dateError, setDateError] = useState(false); 
   const [showToast, setShowToast] = useState(false); 
-  const [errorMessage, setErrorMessage] = useState(''); // Dynamic error message
+  const [errorMessage, setErrorMessage] = useState(''); 
 
-  // Fetch rooms function
   const fetchRoomAvailability = async () => {
     setLoading(true);
     try {
@@ -223,32 +244,26 @@ const Booking = () => {
     }
   };
 
-  // Initial Fetch on Mount (fetches all rooms)
   useEffect(() => {
     fetchRoomAvailability();
   }, []);
 
-  // --- NEW: Auto-Fetch when BOTH dates are selected AND VALID ---
   useEffect(() => {
     if (checkIn && checkOut) {
         const start = new Date(checkIn);
         const end = new Date(checkOut);
 
         if (end <= start) {
-            // If date is invalid, don't auto-fetch, and show local error
             setDateError(true);
             setErrorMessage('Check-out must be after Check-in');
         } else {
-            // Valid dates: Clear errors and Fetch
             setDateError(false);
             setErrorMessage('');
             fetchRoomAvailability();
-            // Note: We do NOT clear setCheckIn or setCheckOut here, so they stay filled.
         }
     }
   }, [checkIn, checkOut]);
 
-  // --- Logic to Handle Error Animation ---
   const triggerErrorAnimation = (msg: string) => {
     setDateError(true);
     setErrorMessage(msg);
@@ -257,134 +272,163 @@ const Booking = () => {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  // --- Manual Search Button Handler ---
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 1. Check existence
     if(!checkIn || !checkOut) {
         triggerErrorAnimation('Please select Check-in and Check-out dates first!');
         return;
     }
-
-    // 2. Check Validity (Check-out > Check-in)
     const start = new Date(checkIn);
     const end = new Date(checkOut);
-
     if (end <= start) {
         triggerErrorAnimation('Check-out date must be after Check-in date!');
         return;
     }
-
-    // 3. Valid
     setDateError(false);
     setShowToast(false);
     fetchRoomAvailability();
   };
 
-  // --- View Details Click Handler ---
   const handleBookAttempt = () => {
-    // If we are here, it means checkIn or checkOut is missing (based on RoomCard logic)
     triggerErrorAnimation('Please select Check-in and Check-out dates first!');
   };
 
   if (loading) return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 z-50 fixed inset-0">
-        <div className="h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="h-12 w-12 border-4 border-blue-200 border-t-blue-900 rounded-full animate-spin"></div>
     </div>
   );
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="min-h-screen bg-gray-50 relative">
+    <div className="font-sans text-gray-800 bg-gray-50 min-h-screen flex flex-col">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="flex-grow relative">
       <UserNavbar />
       
-      {/* --- ANIMATED ERROR TOAST NOTIFICATION --- */}
+      {/* --- ERROR TOAST --- */}
       <AnimatePresence>
         {showToast && (
             <motion.div 
-                initial={{ opacity: 0, y: -100, x: "-50%" }}
+                initial={{ opacity: 0, y: -20, x: "-50%" }}
                 animate={{ opacity: 1, y: 20 }}
-                exit={{ opacity: 0, y: -100 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="fixed top-0 left-1/2 z-[100] flex items-center gap-3 bg-red-600 text-white px-8 py-4 rounded-full shadow-2xl backdrop-blur-md"
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="fixed top-24 left-1/2 z-[100] flex items-center gap-3 bg-white border-l-4 border-red-500 px-6 py-4 rounded-r-lg shadow-xl"
             >
-                <XCircle className="w-6 h-6 text-red-200" />
-                <span className="font-semibold tracking-wide">{errorMessage}</span>
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                <p className="text-sm font-medium text-gray-800">{errorMessage}</p>
             </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="py-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto space-y-8">
-          
-          {/* Search Bar */}
-          <motion.div 
-            animate={dateError ? { x: [-10, 10, -10, 10, 0] } : {}} 
-            transition={{ duration: 0.4 }}
-            className={`bg-white p-6 rounded-xl shadow-md border-2 transition-all duration-300 ${dateError ? 'border-red-500 shadow-red-100' : 'border-gray-100'}`}
-          >
-             <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 items-end">
-                <div className="flex-1 w-full">
-                    <label className={`text-sm font-semibold mb-1 flex items-center gap-2 ${dateError ? 'text-red-600' : 'text-gray-700'}`}>
-                        <Calendar size={16}/> Check In
-                    </label>
-                    <input 
-                        type="date" 
-                        min={today}
-                        value={checkIn}
-                        onChange={(e) => {
-                            setCheckIn(e.target.value);
-                            // If user selects a new check-in that is after current check-out, we can optionally clear check-out
-                            // But here we just let the validation catch it visually
-                        }}
-                        className={`w-full p-2.5 bg-gray-50 border rounded-lg focus:ring-2 outline-none transition-all ${dateError ? 'border-red-300 bg-red-50 focus:ring-red-200' : 'focus:ring-[#1a2b49]'}`}
-                    />
-                </div>
-                <div className="flex-1 w-full">
-                    <label className={`text-sm font-semibold mb-1 flex items-center gap-2 ${dateError ? 'text-red-600' : 'text-gray-700'}`}>
-                        <Calendar size={16}/> Check Out
-                    </label>
-                    <input 
-                        type="date" 
-                        min={checkIn || today} // Ensure HTML prevents picking date before check-in
-                        value={checkOut}
-                        onChange={(e) => setCheckOut(e.target.value)}
-                        className={`w-full p-2.5 bg-gray-50 border rounded-lg focus:ring-2 outline-none transition-all ${dateError ? 'border-red-300 bg-red-50 focus:ring-red-200' : 'focus:ring-[#1a2b49]'}`}
-                    />
-                </div>
-                <button type="submit" className="w-full md:w-auto px-6 py-3 bg-[#1a2b49] text-white font-bold rounded-lg hover:bg-[#2c436b] transition-colors flex items-center justify-center gap-2">
-                    <Search size={18}/> Check Availability
-                </button>
-             </form>
-             {dateError && (
-                <motion.p 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} 
-                    className="text-red-500 text-xs mt-2 font-bold flex items-center gap-1"
-                >
-                    <AlertCircle size={12}/> {errorMessage || 'Dates are required'}
-                </motion.p>
-             )}
-          </motion.div>
-
-          <div className="space-y-6">
-            {rooms.length === 0 ? (
-              <div className="text-center text-gray-500 py-10">No rooms found. Try adjusting dates.</div>
-            ) : (
-              rooms.map((room, index) => (
-                <RoomCard 
-                    key={room._id} 
-                    room={room} 
-                    index={index} 
-                    checkIn={checkIn} 
-                    checkOut={checkOut} 
-                    onBookAttempt={handleBookAttempt}
-                />
-              ))
-            )}
+      {/* --- HERO / SEARCH SECTION --- */}
+      <div className="relative bg-[#0f172a] pb-32 pt-12 md:pt-24 px-4">
+          {/* Background Elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+             <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-900/10 blur-3xl"></div>
+             <div className="absolute bottom-0 left-0 w-1/3 h-2/3 bg-indigo-900/10 blur-3xl"></div>
           </div>
+
+          <div className="relative z-10 max-w-7xl mx-auto mb-10">
+            <h1 className="text-4xl md:text-6xl font-serif text-white mb-4 leading-tight">Book Your <br/>Perfect Sanctuary</h1>
+            <p className="text-gray-400 text-lg max-w-xl">Indulge in comfort and luxury. Select your dates to view our exclusive collection of rooms.</p>
+          </div>
+
+          {/* Floating Search Bar - Wide Layout */}
+          <div className="relative z-20 max-w-7xl mx-auto">
+            <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6 }}
+                className={`bg-white rounded-2xl shadow-xl border p-6 transition-all duration-300 ${dateError ? 'border-red-300 ring-4 ring-red-50' : 'border-gray-100'}`}
+            >
+                <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4 items-end">
+                    
+                    {/* Check In */}
+                    <div className="flex-1 w-full">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Check In</label>
+                        <div className={`flex items-center bg-gray-50 border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/20 transition-all ${dateError ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
+                            <div className="pl-4 text-gray-400"><Calendar size={18}/></div>
+                            <input 
+                                type="date" 
+                                min={today}
+                                value={checkIn}
+                                onChange={(e) => setCheckIn(e.target.value)}
+                                className="w-full p-3 bg-transparent outline-none text-gray-800 font-medium text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Check Out */}
+                    <div className="flex-1 w-full">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Check Out</label>
+                        <div className={`flex items-center bg-gray-50 border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/20 transition-all ${dateError ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}>
+                            <div className="pl-4 text-gray-400"><Calendar size={18}/></div>
+                            <input 
+                                type="date" 
+                                min={checkIn || today}
+                                value={checkOut}
+                                onChange={(e) => setCheckOut(e.target.value)}
+                                className="w-full p-3 bg-transparent outline-none text-gray-800 font-medium text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Search Button - Standard Size */}
+                    <div className="w-full md:w-auto">
+                        <button 
+                            type="submit" 
+                            className="w-full md:w-48 p-3.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl font-semibold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                        >
+                            <Search size={18} />
+                            Search
+                        </button>
+                    </div>
+                </form>
+            </motion.div>
+          </div>
+      </div>
+
+      {/* --- RESULTS SECTION --- */}
+      <div className="px-4 sm:px-6 lg:px-8 -mt-12 pb-24 relative z-10">
+        {/* LAYOUT: Expanded to max-w-7xl for wide screen look */}
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          {rooms.length === 0 ? (
+             <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="bg-white rounded-2xl p-10 text-center shadow-lg border border-gray-100 mt-8"
+             >
+                <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="w-8 h-8 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-800 mb-1">No Rooms Displayed</h3>
+                <p className="text-gray-500 text-sm">Please select your stay dates above to check availability.</p>
+             </motion.div>
+          ) : (
+            <>
+                <div className="flex items-center justify-between px-2 pt-6">
+                    <p className="text-gray-500 text-sm">Showing <span className="text-gray-900 font-bold">{rooms.length}</span> results</p>
+                </div>
+
+                <div className="space-y-8">
+                    {rooms.map((room, index) => (
+                        <RoomCard 
+                            key={room._id} 
+                            room={room} 
+                            index={index} 
+                            checkIn={checkIn} 
+                            checkOut={checkOut} 
+                            onBookAttempt={handleBookAttempt}
+                        />
+                    ))}
+                </div>
+            </>
+          )}
         </div>
       </div>
     </motion.div>
+    <Footer />
+    </div>
   );
 };
 
