@@ -56,7 +56,7 @@ const Footer = () => {
                 Home
               </Link>
 
-              <Link to="/about" className="group flex items-center text-sm hover:text-blue-400 transition-all duration-200">
+              <Link to="/aboutus" className="group flex items-center text-sm hover:text-blue-400 transition-all duration-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-slate-600 group-hover:bg-blue-500 mr-2 transition-colors"></span>
                 About Us
               </Link>

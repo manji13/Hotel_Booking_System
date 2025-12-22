@@ -104,7 +104,7 @@ const Navbar: React.FC = () => {
             {/* CENTER LINKS (Hidden on Mobile) */}
             <div className="hidden md:flex items-center justify-center space-x-8">
               <NavLink to="/Userpage">HOME</NavLink>
-              <NavLink to="/about">ABOUT</NavLink>
+              <NavLink to="/aboutus">ABOUT</NavLink>
               <NavLink to="/contact">CONTACT</NavLink>
             </div>
 

@@ -7,11 +7,12 @@ import Register from './Pages/Register';
 import Home from './Pages/Dashboard';
 import Userpage from './Pages/Userpage';
 import UserProfile from './Pages/Userprofile';
+import AboutUs from './Pages/aboutus'; 
 
 // --- User Booking Flow ---
 import Booking from './Pages/Booking';
 import UserBookingForm from './Pages/UserBookingForm';
-import UserBookingHistory from './Pages/UserBookingHistory'; // <--- NEW IMPORT
+import UserBookingHistory from './Pages/UserBookingHistory'; 
 import UserBookingDetails from './Pages/Employee/userbookingdetails'; 
 
 // --- Employee Pages ---
@@ -33,6 +34,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/userpage" element={<Userpage/>} />
           <Route path="/userprofile" element={<UserProfile/>} />
+          <Route path="/aboutus" element={<AboutUs/>} />
 
           {/* --- Booking Flow --- */}
           {/* 1. List of Rooms */}
@@ -42,7 +44,7 @@ function App() {
           <Route path="/booking/:roomId" element={<UserBookingForm/>} />
           
           {/* 3. User's Personal Booking History (List of their own bookings) */}
-          <Route path="/my-history" element={<UserBookingHistory />} /> {/* <--- NEW ROUTE */}
+          <Route path="/my-history" element={<UserBookingHistory />} /> 
           
           {/* 4. Single Booking Details (View & Delete) */}
           <Route path="/booking-details/:id" element={<UserBookingDetails />} />
