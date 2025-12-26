@@ -105,7 +105,7 @@ const Navbar: React.FC = () => {
             <div className="hidden md:flex items-center justify-center space-x-8">
               <NavLink to="/Userpage">HOME</NavLink>
               <NavLink to="/aboutus">ABOUT</NavLink>
-              <NavLink to="/contact">CONTACT</NavLink>
+              <NavLink to="/contactus">CONTACT</NavLink>
             </div>
 
             {/* RIGHT SIDE ACTIONS */}

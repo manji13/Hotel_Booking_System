@@ -8,6 +8,7 @@ import Home from './Pages/Dashboard';
 import Userpage from './Pages/Userpage';
 import UserProfile from './Pages/Userprofile';
 import AboutUs from './Pages/aboutus'; 
+import Contactus from './Pages/Contactus';
 
 // --- User Booking Flow ---
 import Booking from './Pages/Booking';
@@ -35,6 +36,7 @@ function App() {
           <Route path="/userpage" element={<Userpage/>} />
           <Route path="/userprofile" element={<UserProfile/>} />
           <Route path="/aboutus" element={<AboutUs/>} />
+          <Route path="/contactus" element={<Contactus/>} />
 
           {/* --- Booking Flow --- */}
           {/* 1. List of Rooms */}

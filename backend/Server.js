@@ -9,6 +9,7 @@ import userRoutes from './Routes/userRoutes.js';
 import roomRoutes from './Routes/roomRoutes.js';
 import paymentRoutes from './Routes/bookingRoute.js';
 import FeedbackRoute from './Routes/FeedbackRoute.js'; // This will now work because we used 'export default' in the route file
+import contactRoutes from "./Routes/contactRoutes.js";
 
 // DEBUG: Check Stripe key from server.js
 console.log("DEBUG STRIPE KEY (server.js):", process.env.STRIPE_SECRET_KEY ? "Loaded" : "Missing");
@@ -46,6 +47,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/feedback', FeedbackRoute);
+app.use("/api/contact", contactRoutes);
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
